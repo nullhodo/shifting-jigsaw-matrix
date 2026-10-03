@@ -20,6 +20,7 @@ export interface Palette {
 export interface JigsawParameters {
   columns: number;
   rows: number;
+  keepSquarePieceAspect: boolean;
   tabShapeStyle: TabShapeStyle;
   tabSizeFactor: number;
   tabRoundness: number;

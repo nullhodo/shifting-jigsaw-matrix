@@ -11,7 +11,10 @@ import {
   exportParameterStateJSON,
   exportSvgGraphics,
 } from "./core/exporter";
-import { calculateConstrainedPuzzleDimensions } from "./core/geometry";
+import {
+  calculateConstrainedPuzzleDimensions,
+  calculateOptimalGridDimensions,
+} from "./core/geometry";
 import {
   generateGrainNoiseTexture,
   initializeBoundaryLines,
@@ -27,6 +30,7 @@ import "./index.css";
 import {
   autoRandomIntervalMsAtom,
   colorGridAtom,
+  historyStackAtom,
   horizontalLinesAtom,
   isAutoRandomActiveAtom,
   isLoopRecordingActiveAtom,
@@ -45,7 +49,8 @@ if (import.meta.env.DEV && !document.title.startsWith("[DEV]")) {
 }
 
 const App: React.FC = () => {
-  const [params] = useAtom(jigsawParamsAtom);
+  const [params, setParams] = useAtom(jigsawParamsAtom);
+  const [, setHistoryStack] = useAtom(historyStackAtom);
   const [colorGrid, setColorGrid] = useAtom(colorGridAtom);
   const [horizontalLines, setHorizontalLines] = useAtom(
     horizontalLinesAtom,
@@ -270,19 +275,40 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!p5ContainerRef.current) return;
 
-    // Initialize grid & boundaries initially
+    const container = p5ContainerRef.current;
+    const initialW = container.clientWidth || window.innerWidth;
+    const initialH = container.clientHeight || window.innerHeight;
+
+    // 初回ロード時: ウィンドウサイズから自動でピースが1:1に近くなる最適な行列数を算出・適用
+    const optimal = calculateOptimalGridDimensions(initialW, initialH);
+    const initialCols = optimal.columns;
+    const initialRows = optimal.rows;
+
+    paramsRef.current.columns = initialCols;
+    paramsRef.current.rows = initialRows;
+    setParams((prev) => ({
+      ...prev,
+      columns: initialCols,
+      rows: initialRows,
+    }));
+    setHistoryStack([
+      {
+        ...paramsRef.current,
+        columns: initialCols,
+        rows: initialRows,
+      },
+    ]);
+
+    // Initialize grid & boundaries initially with optimal counts
     const initialGrid = initializeJigsawGrid(
-      paramsRef.current.columns,
-      paramsRef.current.rows,
+      initialCols,
+      initialRows,
       paramsRef.current.activeColorPalette,
     );
     setColorGrid(initialGrid);
 
     const { horizontalBoundaryLines, verticalBoundaryLines } =
-      initializeBoundaryLines(
-        paramsRef.current.columns,
-        paramsRef.current.rows,
-      );
+      initializeBoundaryLines(initialCols, initialRows);
     setHorizontalLines(horizontalBoundaryLines);
     setVerticalLines(verticalBoundaryLines);
 
@@ -410,6 +436,19 @@ const App: React.FC = () => {
             : window.innerHeight;
         if (nw > 10 && nh > 10) {
           p.resizeCanvas(nw, nh);
+
+          // ピース比率維持オプションがONの場合、リサイズ時にも比率を1:1近くに保つ
+          if (paramsRef.current.keepSquarePieceAspect) {
+            const layout = calculateConstrainedPuzzleDimensions(nw, nh);
+            const aspect = layout.availableWidth / layout.availableHeight;
+            const newRows = Math.max(
+              2,
+              Math.min(16, Math.round(paramsRef.current.columns / aspect)),
+            );
+            if (newRows !== paramsRef.current.rows) {
+              handleParamChange("rows", newRows);
+            }
+          }
         }
       };
     };

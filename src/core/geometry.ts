@@ -262,6 +262,55 @@ export function calculateConstrainedPuzzleDimensions(
 }
 
 /**
+ * ウィンドウ寸法およびパズル描画領域からピース比率が1:1に近くなる最適な(列数, 行数)を算出
+ */
+export function calculateOptimalGridDimensions(
+  windowWidth: number,
+  windowHeight: number,
+  targetCellSize = 115,
+): { columns: number; rows: number } {
+  const bounds = calculateConstrainedPuzzleDimensions(
+    windowWidth,
+    windowHeight,
+  );
+  const aspect = bounds.availableWidth / bounds.availableHeight;
+
+  let rows = Math.round(bounds.availableHeight / targetCellSize);
+  rows = Math.max(3, Math.min(12, rows));
+
+  let cols = Math.round(rows * aspect);
+  cols = Math.max(3, Math.min(16, cols));
+
+  return { columns: cols, rows };
+}
+
+/**
+ * ピース比率を1:1近くに保つよう、列数または行数を固定値として相手側を自動算出
+ */
+export function calculateBalancedGridDimensions(
+  windowWidth: number,
+  windowHeight: number,
+  fixedDimension:
+    | { type: "columns"; value: number }
+    | { type: "rows"; value: number },
+): { columns: number; rows: number } {
+  const bounds = calculateConstrainedPuzzleDimensions(
+    windowWidth,
+    windowHeight,
+  );
+  const aspect = bounds.availableWidth / bounds.availableHeight;
+
+  if (fixedDimension.type === "columns") {
+    const cols = Math.max(2, Math.min(16, fixedDimension.value));
+    const rows = Math.max(2, Math.min(16, Math.round(cols / aspect)));
+    return { columns: cols, rows };
+  }
+  const rows = Math.max(2, Math.min(16, fixedDimension.value));
+  const cols = Math.max(2, Math.min(16, Math.round(rows * aspect)));
+  return { columns: cols, rows };
+}
+
+/**
  * 出っ張り部分の閉じたパスを構築する関数 (CanvasRenderingContext2D)
  */
 export function traceJigsawTabClosedPath(

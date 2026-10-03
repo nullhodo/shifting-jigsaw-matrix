@@ -2,6 +2,7 @@ import { useAtom } from "jotai";
 import type React from "react";
 import { PRESET_COLOR_PALETTES } from "../constants/palettes";
 import type { JigsawConfigFile } from "../core/exporter";
+import { calculateConstrainedPuzzleDimensions } from "../core/geometry";
 import {
   initializeBoundaryLines,
   initializeJigsawGrid,
@@ -50,10 +51,34 @@ export function useJigsawHandlers() {
   ) => {
     const updated = { ...params, [key]: value };
 
-    // columns or rows change requires grid re-initialization
-    if (key === "columns" || key === "rows") {
-      const cols = key === "columns" ? (value as number) : params.columns;
-      const rows = key === "rows" ? (value as number) : params.rows;
+    // columns or rows change or keepSquarePieceAspect toggle requires grid re-initialization
+    if (
+      key === "columns" ||
+      key === "rows" ||
+      key === "keepSquarePieceAspect"
+    ) {
+      let cols = key === "columns" ? (value as number) : params.columns;
+      let rows = key === "rows" ? (value as number) : params.rows;
+      const isAspectLocked =
+        key === "keepSquarePieceAspect"
+          ? (value as boolean)
+          : updated.keepSquarePieceAspect;
+
+      if (isAspectLocked) {
+        const w = window.innerWidth || 800;
+        const h = window.innerHeight || 600;
+        const bounds = calculateConstrainedPuzzleDimensions(w, h);
+        const aspect = bounds.availableWidth / bounds.availableHeight;
+
+        if (key === "rows") {
+          cols = Math.max(2, Math.min(16, Math.round(rows * aspect)));
+        } else {
+          rows = Math.max(2, Math.min(16, Math.round(cols / aspect)));
+        }
+      }
+
+      updated.columns = cols;
+      updated.rows = rows;
       setColorGrid(
         initializeJigsawGrid(cols, rows, updated.activeColorPalette),
       );
@@ -171,8 +196,21 @@ export function useJigsawHandlers() {
     const updated = { ...params };
 
     if (randomTargets.grid) {
-      updated.columns = Math.floor(Math.random() * 8) + 3;
-      updated.rows = Math.floor(Math.random() * 8) + 3;
+      if (updated.keepSquarePieceAspect) {
+        const w = window.innerWidth || 800;
+        const h = window.innerHeight || 600;
+        const bounds = calculateConstrainedPuzzleDimensions(w, h);
+        const aspect = bounds.availableWidth / bounds.availableHeight;
+        const newCols = Math.floor(Math.random() * 8) + 4;
+        updated.columns = newCols;
+        updated.rows = Math.max(
+          2,
+          Math.min(16, Math.round(newCols / aspect)),
+        );
+      } else {
+        updated.columns = Math.floor(Math.random() * 8) + 3;
+        updated.rows = Math.floor(Math.random() * 8) + 3;
+      }
     }
 
     if (randomTargets.tabs) {

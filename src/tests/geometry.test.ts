@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateBalancedGridDimensions,
   calculateConstrainedPuzzleDimensions,
+  calculateOptimalGridDimensions,
   getJigsawTabGeometry,
 } from "../core/geometry";
 import type { TabShapeStyle } from "../types/jigsaw";
@@ -111,5 +113,49 @@ describe("geometry calculations", () => {
         }
       }
     }
+  });
+
+  it("calculates optimal grid dimensions that produce near 1:1 piece aspect ratio", () => {
+    // 16:9 widescreen display (1920x1080)
+    const wide = calculateOptimalGridDimensions(1920, 1080);
+    const wideBounds = calculateConstrainedPuzzleDimensions(1920, 1080);
+    const widePieceAspect =
+      wideBounds.availableWidth /
+      wide.columns /
+      (wideBounds.availableHeight / wide.rows);
+    expect(widePieceAspect).toBeGreaterThanOrEqual(0.85);
+    expect(widePieceAspect).toBeLessThanOrEqual(1.2);
+
+    // Square display (800x800)
+    const square = calculateOptimalGridDimensions(800, 800);
+    expect(square.columns).toBe(square.rows);
+
+    // Portrait display (400x800)
+    const portrait = calculateOptimalGridDimensions(400, 800);
+    const portraitBounds = calculateConstrainedPuzzleDimensions(400, 800);
+    const portraitPieceAspect =
+      portraitBounds.availableWidth /
+      portrait.columns /
+      (portraitBounds.availableHeight / portrait.rows);
+    expect(portraitPieceAspect).toBeGreaterThanOrEqual(0.8);
+    expect(portraitPieceAspect).toBeLessThanOrEqual(1.25);
+  });
+
+  it("calculates balanced grid dimensions when linking columns and rows", () => {
+    // Fix columns = 8 on 1920x1080 (clamped aspect = 1.55)
+    const fromCols = calculateBalancedGridDimensions(1920, 1080, {
+      type: "columns",
+      value: 8,
+    });
+    expect(fromCols.columns).toBe(8);
+    expect(fromCols.rows).toBe(5); // Math.round(8 / 1.55) = 5
+
+    // Fix rows = 4 on 1920x1080
+    const fromRows = calculateBalancedGridDimensions(1920, 1080, {
+      type: "rows",
+      value: 4,
+    });
+    expect(fromRows.rows).toBe(4);
+    expect(fromRows.columns).toBe(6); // Math.round(4 * 1.55) = 6
   });
 });
