@@ -1,0 +1,16 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Production build output
+dist
+
+# Generated media / export outputs
+output/*
+!output/.gitkeep
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+*.log
+.vite

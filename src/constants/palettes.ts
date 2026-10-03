@@ -1,0 +1,205 @@
+import type { Palette } from "../types/jigsaw";
+
+export const PRESET_COLOR_PALETTES: Palette[] = [
+  {
+    title: "Monochrome & Grayscale",
+    comment: "シックで無機質なグレースケール調",
+    colors: [
+      { name: "Pure White", hex: "#FFFFFF", rgb: [255, 255, 255] },
+      { name: "Silver Gray", hex: "#D1D5DB", rgb: [209, 213, 219] },
+      { name: "Medium Gray", hex: "#6B7280", rgb: [107, 114, 128] },
+      { name: "Charcoal", hex: "#374151", rgb: [55, 65, 81] },
+      { name: "Deep Obsidian", hex: "#111827", rgb: [17, 24, 39] },
+    ],
+  },
+  {
+    title: "Vintage Starburst",
+    comment: "ノスタルジックな暖色と深緑",
+    colors: [
+      { name: "Color 01", hex: "#CC2132", rgb: [204, 33, 50] },
+      { name: "Color 02", hex: "#E6692A", rgb: [230, 105, 42] },
+      { name: "Color 03", hex: "#ED9530", rgb: [237, 149, 48] },
+      { name: "Color 04", hex: "#E9BD96", rgb: [233, 189, 150] },
+      { name: "Color 05", hex: "#988A20", rgb: [152, 138, 32] },
+      { name: "Color 06", hex: "#34685C", rgb: [52, 104, 92] },
+      { name: "Color 07", hex: "#1E404F", rgb: [30, 64, 79] },
+    ],
+  },
+  {
+    title: "Retro Sunny Living",
+    comment: "レトロで温かみのある暖色",
+    colors: [
+      { name: "RUBY", hex: "#A6171C", rgb: [166, 23, 28] },
+      { name: "NATURAL", hex: "#D6D0C5", rgb: [214, 208, 197] },
+      { name: "SUNNY", hex: "#F1C045", rgb: [241, 192, 69] },
+    ],
+  },
+  {
+    title: "Bauhaus Geometry",
+    comment: "幾何学的な原色構成",
+    colors: [
+      { name: "Blue", hex: "#1E459F", rgb: [30, 69, 159] },
+      { name: "Red", hex: "#CF2A2A", rgb: [207, 42, 42] },
+      { name: "Yellow", hex: "#FABD32", rgb: [250, 189, 50] },
+      { name: "Beige", hex: "#E1DCCA", rgb: [225, 220, 202] },
+    ],
+  },
+  {
+    title: "Bold Modernism",
+    comment: "モダンなビビッドピンクと無彩色",
+    colors: [
+      { name: "Magenta", hex: "#FF4777", rgb: [255, 71, 119] },
+      { name: "Slate", hex: "#36434A", rgb: [54, 67, 74] },
+      { name: "Camouflage Sand", hex: "#E5D4C8", rgb: [229, 212, 200] },
+    ],
+  },
+  {
+    title: "Citrus Breeze",
+    comment: "爽やかな青と柑橘系の黄色",
+    colors: [
+      { name: "LIGHT BLUE", hex: "#C3E7F1", rgb: [195, 231, 241] },
+      { name: "MOONSTONE", hex: "#519CAB", rgb: [81, 156, 171] },
+      { name: "SAFFRON", hex: "#FFC64F", rgb: [255, 198, 79] },
+      { name: "GUNMETAL", hex: "#20373B", rgb: [32, 55, 59] },
+    ],
+  },
+  {
+    title: "Dreamy Sunset",
+    comment: "淡いパステルカラーのグラデーション",
+    colors: [
+      { name: "Peach", hex: "#FAD6A5", rgb: [250, 214, 165] },
+      { name: "Pink", hex: "#F593C4", rgb: [245, 147, 196] },
+      { name: "Lavender", hex: "#B8AEE3", rgb: [184, 174, 227] },
+      { name: "Sky Blue", hex: "#77CAE3", rgb: [119, 202, 227] },
+      { name: "Dark Blue", hex: "#11476C", rgb: [17, 71, 108] },
+    ],
+  },
+  {
+    title: "Fresh Orange",
+    comment: "明るいオレンジとフレッシュな水色",
+    colors: [
+      { name: "Mistral", hex: "#A3DFF1", rgb: [163, 223, 241] },
+      { name: "Zéphir", hex: "#FEE4B8", rgb: [254, 228, 184] },
+      { name: "Solara", hex: "#FFC065", rgb: [255, 192, 101] },
+      { name: "Pulpe", hex: "#FFA43A", rgb: [255, 164, 58] },
+    ],
+  },
+  {
+    title: "Classic Marine",
+    comment: "クラシックなトリコロール",
+    colors: [
+      { name: "Deep Red", hex: "#7C170D", rgb: [124, 23, 13] },
+      { name: "Navy Blue", hex: "#141A45", rgb: [20, 26, 69] },
+      { name: "Off White", hex: "#ECE1D5", rgb: [236, 225, 213] },
+    ],
+  },
+  {
+    title: "Dynamic Sport",
+    comment: "アクティブでスポーティーなマルチカラー",
+    colors: [
+      { name: "BLUE", hex: "#2267B1", rgb: [34, 103, 177] },
+      { name: "GOLD", hex: "#F7D232", rgb: [247, 210, 50] },
+      { name: "ORANGE", hex: "#F36F36", rgb: [243, 111, 54] },
+      { name: "GREEN", hex: "#5DC3AB", rgb: [93, 195, 171] },
+    ],
+  },
+  {
+    title: "Fruit Salad",
+    comment: "鮮やかな青と黄色のコントラスト",
+    colors: [
+      { name: "Periwinkle", hex: "#9EB6F8", rgb: [158, 182, 248] },
+      { name: "Royal Blue", hex: "#386CD4", rgb: [56, 108, 212] },
+      { name: "Midnight", hex: "#292E4F", rgb: [41, 46, 79] },
+      { name: "Mustard", hex: "#E2AD3E", rgb: [226, 173, 62] },
+      { name: "Lemon", hex: "#F3D959", rgb: [243, 217, 89] },
+    ],
+  },
+  {
+    title: "Retro 70's Colors",
+    comment: "70年代調のシックなアースカラー",
+    colors: [
+      { name: "Orange Brulé", hex: "#DD6E2C", rgb: [221, 110, 44] },
+      { name: "Moutarde / Curry", hex: "#C69830", rgb: [198, 152, 48] },
+      { name: "Terracotta", hex: "#9C4D2B", rgb: [156, 77, 43] },
+      { name: "Marron Chocolat", hex: "#885B35", rgb: [136, 91, 53] },
+      { name: "Vert Avocat Clair", hex: "#5F6B2C", rgb: [95, 107, 44] },
+      { name: "Vert Olive", hex: "#8C7B43", rgb: [140, 123, 67] },
+      { name: "Bleu Roi", hex: "#1E4195", rgb: [30, 65, 149] },
+      { name: "Bleu Pétrole", hex: "#225675", rgb: [34, 86, 117] },
+      { name: "Violet Intense", hex: "#45246D", rgb: [69, 36, 109] },
+      { name: "Noir Profond", hex: "#1D1A18", rgb: [29, 26, 24] },
+    ],
+  },
+  {
+    title: "Wes Anderson Palette",
+    comment: "ノスタルジックでシネマティックな色彩",
+    colors: [
+      { name: "Color 01", hex: "#8E001A", rgb: [142, 0, 26] },
+      { name: "Color 02", hex: "#D63E26", rgb: [214, 62, 38] },
+      { name: "Color 03", hex: "#E56E00", rgb: [229, 110, 0] },
+      { name: "Color 04", hex: "#EBB700", rgb: [235, 183, 0] },
+      { name: "Color 05", hex: "#FAC457", rgb: [250, 196, 87] },
+      { name: "Color 06", hex: "#26819E", rgb: [38, 129, 158] },
+      { name: "Color 07", hex: "#008D79", rgb: [0, 141, 121] },
+      { name: "Color 08", hex: "#4C5278", rgb: [76, 82, 120] },
+      { name: "Color 09", hex: "#66B2C6", rgb: [102, 178, 198] },
+    ],
+  },
+  {
+    title: "Citrus Warmth",
+    comment: "柑橘系とナチュラルトーン",
+    colors: [
+      { name: "BLOOD ORANGE", hex: "#C8453C", rgb: [200, 69, 60] },
+      { name: "LEMON PULP", hex: "#F2D94E", rgb: [242, 217, 78] },
+      { name: "CITRUS LEAF", hex: "#6F8A4F", rgb: [111, 138, 79] },
+      { name: "PEEL BROWN", hex: "#8A5A3C", rgb: [138, 90, 60] },
+      { name: "PORCELAIN WHITE", hex: "#F6F4EF", rgb: [246, 244, 239] },
+    ],
+  },
+  {
+    title: "Coastal Sunset",
+    comment: "落ち着いたビーチと夕暮れのトーン",
+    colors: [
+      { name: "BUTTER", hex: "#F4D892", rgb: [244, 216, 146] },
+      { name: "MOSS", hex: "#C0B05B", rgb: [192, 176, 91] },
+      { name: "GUAVA", hex: "#F2B6A3", rgb: [242, 182, 163] },
+      { name: "SUNSET", hex: "#E89C73", rgb: [232, 156, 115] },
+      { name: "SANGRIA", hex: "#E36559", rgb: [227, 101, 89] },
+      { name: "LAGOON", hex: "#94BEBB", rgb: [148, 190, 187] },
+      { name: "ODYSSEY", hex: "#23617E", rgb: [35, 97, 126] },
+    ],
+  },
+  {
+    title: "碧石の層",
+    comment: "鉱石のブルーグリーンとシックなアースカラー",
+    colors: [
+      { name: "Dark Slate", hex: "#475651", rgb: [71, 86, 81] },
+      { name: "Teal Stone", hex: "#48616B", rgb: [72, 97, 107] },
+      { name: "Forest Sage", hex: "#768064", rgb: [118, 128, 100] },
+      { name: "Mist Blue", hex: "#8BA8B1", rgb: [139, 168, 177] },
+      { name: "Pearl Aqua", hex: "#C0D4D8", rgb: [192, 212, 216] },
+    ],
+  },
+  {
+    title: "Dramatic Twilight",
+    comment: "夕焼けの深みのあるグラデーション",
+    colors: [
+      { name: "AUBERGINE", hex: "#26121B", rgb: [38, 18, 27] },
+      { name: "CLARET", hex: "#6B1A34", rgb: [107, 26, 52] },
+      { name: "MADDER LAKE", hex: "#CE3737", rgb: [206, 55, 55] },
+      { name: "RAIN BOOTS", hex: "#FB6734", rgb: [251, 103, 52] },
+      { name: "PRUSSIAN BLUE", hex: "#1B3854", rgb: [27, 56, 84] },
+    ],
+  },
+  {
+    title: "Warm Kimono Sunset",
+    comment: "和傘と着物の温かみのある暖色",
+    colors: [
+      { name: "BURNT UMBER", hex: "#863525", rgb: [134, 53, 37] },
+      { name: "MEDIUM VERMILION", hex: "#DD733C", rgb: [221, 115, 60] },
+      { name: "SANDY BROWN", hex: "#F9A45F", rgb: [249, 164, 95] },
+      { name: "RAISIN BLACK", hex: "#271525", rgb: [39, 21, 37] },
+      { name: "NEW YORK PINK", hex: "#D88E83", rgb: [216, 142, 131] },
+    ],
+  },
+];
