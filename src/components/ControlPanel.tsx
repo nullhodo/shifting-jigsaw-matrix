@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useAtom } from "jotai";
 import {
+  DicesIcon,
   InfoIcon,
   Redo2Icon,
   SettingsIcon,
@@ -14,16 +15,18 @@ import {
   historyPointerAtom,
   historyStackAtom,
   isPanelOpenAtom,
+  isRandomTargetsModalOpenAtom,
   jigsawParamsAtom,
   toastsAtom,
 } from "../state/jigsawStore";
 import type { JigsawParamValue, JigsawParameters } from "../types/jigsaw";
-import { AutomationSection } from "./sections/AutomationSection";
+import { RandomTargetsDrawer } from "./drawers/RandomTargetsDrawer";
 import { ColorPaletteSection } from "./sections/ColorPaletteSection";
 import { EffectsSection } from "./sections/EffectsSection";
 import { ExportSection } from "./sections/ExportSection";
 import { GridScaleSection } from "./sections/GridScaleSection";
 import { MotionSection } from "./sections/MotionSection";
+import { OperationsSection } from "./sections/OperationsSection";
 
 interface Props {
   onParamChange: (
@@ -32,6 +35,7 @@ interface Props {
   ) => void;
   onApplyPalette: (idx: number) => void;
   onPickRandomPalette: () => void;
+  onShufflePaletteColors: () => void;
   onGenerateGradientTheme: (baseHex: string) => void;
   onRandomizeAll: () => void;
   onUndo: () => void;
@@ -43,12 +47,14 @@ interface Props {
   onExportJson: () => void;
   onImportJson: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onStartNLoopRecord: (loopCount: number) => void;
+  onStopNLoopRecord: () => void;
 }
 
 export const ControlPanel: React.FC<Props> = ({
   onParamChange,
   onApplyPalette,
   onPickRandomPalette,
+  onShufflePaletteColors,
   onGenerateGradientTheme,
   onRandomizeAll,
   onUndo,
@@ -60,9 +66,13 @@ export const ControlPanel: React.FC<Props> = ({
   onExportJson,
   onImportJson,
   onStartNLoopRecord,
+  onStopNLoopRecord,
 }) => {
   const [params] = useAtom(jigsawParamsAtom);
   const [isOpen, setIsOpen] = useAtom(isPanelOpenAtom);
+  const [isDrawerOpen, setIsDrawerOpen] = useAtom(
+    isRandomTargetsModalOpenAtom,
+  );
   const [historyStack] = useAtom(historyStackAtom);
   const [historyPointer] = useAtom(historyPointerAtom);
   const [toasts] = useAtom(toastsAtom);
@@ -70,41 +80,44 @@ export const ControlPanel: React.FC<Props> = ({
   const canUndo = historyPointer > 0;
   const canRedo = historyPointer < historyStack.length - 1;
 
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelContainerRef = useRef<HTMLDivElement>(null);
 
-  // Close panel on outside click
+  // Close panel on outside click (handles both panel and random target drawer)
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
       if (!isOpen) return;
+
       const path = e.composedPath?.() || [];
       if (
-        panelRef.current &&
-        (path.includes(panelRef.current) ||
-          panelRef.current.contains(e.target as Node))
+        panelContainerRef.current &&
+        (path.includes(panelContainerRef.current) ||
+          panelContainerRef.current.contains(e.target as Node))
       ) {
         return;
       }
+
       setIsOpen(false);
+      setIsDrawerOpen(false);
     };
 
     window.addEventListener("pointerdown", handleOutsideClick);
     return () => {
       window.removeEventListener("pointerdown", handleOutsideClick);
     };
-  }, [isOpen, setIsOpen]);
+  }, [isOpen, setIsOpen, setIsDrawerOpen]);
 
   return (
     <>
-      {/* Floating Toggle Button (Visible when closed) */}
+      {/* Floating Toggle Button (Visible ONLY when Panel is Closed) */}
       {!isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          title="パネルを開く (H)"
-          className="fixed top-4 left-4 z-40 flex items-center gap-2 px-3.5 py-2.5 bg-slate-900/85 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-xl shadow-2xl backdrop-blur-md transition-all cursor-pointer active:scale-95"
+          title="ツール設定 (H)"
+          aria-label="ツール設定を開く"
+          className="absolute top-4 left-4 z-50 bg-white/70 hover:bg-white/90 text-gray-800 hover:text-gray-950 p-2.5 rounded-md shadow-lg backdrop-blur-md border border-white/50 transition-all flex items-center justify-center cursor-pointer active:scale-95"
         >
-          <SlidersHorizontalIcon className="w-4 h-4 text-sky-400" />
-          <span className="text-xs font-bold tracking-wider">PANEL</span>
+          <SettingsIcon className="w-5 h-5" />
         </button>
       )}
 
@@ -120,144 +133,172 @@ export const ControlPanel: React.FC<Props> = ({
               initial={{ opacity: 0, y: 15, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="px-4 py-2.5 bg-slate-900/95 text-slate-100 border border-slate-700/90 rounded-xl shadow-2xl backdrop-blur-md text-xs font-medium flex items-center gap-2"
+              className="px-3.5 py-2 bg-white/85 text-gray-900 border border-white/60 rounded-md shadow-2xl backdrop-blur-xl text-xs font-medium flex items-center gap-2"
             >
-              <InfoIcon className="w-4 h-4 text-sky-400 shrink-0" />
+              <InfoIcon className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{toast.message}</span>
             </motion.div>
           ))}
         </AnimatePresence>
       </aside>
 
-      {/* Main Glassmorphism Panel */}
+      {/* Sidebar Layout: Main Panel + Right Extension Sub-Panel */}
       <AnimatePresence>
         {isOpen && (
-          <motion.aside
-            ref={panelRef}
-            initial={{ x: -420, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -420, opacity: 0 }}
-            transition={{ type: "spring", damping: 26, stiffness: 220 }}
-            className="fixed top-3 left-3 bottom-3 w-88 sm:w-96 z-40 bg-slate-950/85 text-slate-100 rounded-2xl shadow-2xl border border-slate-800/80 backdrop-blur-xl flex flex-col overflow-hidden"
+          <div
+            ref={panelContainerRef}
+            className="absolute top-4 left-4 bottom-4 flex items-start gap-3 z-40 pointer-events-none"
           >
-            {/* Header */}
-            <div className="pt-3.5 pb-3 px-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/60 backdrop-blur-md shrink-0">
-              <div className="flex items-center gap-2">
-                <SettingsIcon className="w-4 h-4 text-sky-400" />
-                <div>
-                  <h1 className="text-xs font-bold tracking-wide text-sky-400 leading-tight">
-                    SHIFTING JIGSAW
-                  </h1>
-                  <p className="text-[10px] text-slate-400 leading-tight">
-                    M×N Kinetic Puzzle Matrix
-                  </p>
-                </div>
-                {import.meta.env.DEV && (
-                  <span className="ml-1 bg-amber-400/20 text-amber-300 border border-amber-400/40 font-bold px-1.5 py-0.5 rounded text-[10px] leading-none select-none">
-                    DEV
+            {/* Main Panel */}
+            <motion.div
+              initial={{ x: -400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -400, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-96 h-full bg-white/65 backdrop-blur-xl text-gray-900 rounded-md shadow-2xl border border-white/50 flex flex-col overflow-hidden pointer-events-auto"
+            >
+              {/* Header */}
+              <div className="p-3.5 border-b border-gray-200/50 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <SettingsIcon className="w-4 h-4 text-gray-800" />
+                  <span className="text-xs font-bold tracking-wide text-gray-900">
+                    ツール設定
                   </span>
-                )}
-              </div>
-
-              {/* Action Buttons: Undo, Redo, Close */}
-              <div className="flex items-center gap-1">
+                  {import.meta.env.DEV && (
+                    <span className="bg-amber-100/90 text-amber-800 border border-amber-300 font-bold px-1.5 py-0.5 rounded text-[10px] leading-none select-none">
+                      DEV
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
-                  disabled={!canUndo}
-                  onClick={onUndo}
-                  title="元に戻す (Ctrl+Z)"
-                  className={`p-1.5 rounded-lg border border-transparent transition-all cursor-pointer ${
-                    canUndo
-                      ? "hover:bg-slate-800 text-slate-200 active:scale-90"
-                      : "opacity-30 cursor-not-allowed text-slate-500"
-                  }`}
-                >
-                  <Undo2Icon className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  disabled={!canRedo}
-                  onClick={onRedo}
-                  title="やり直す (Ctrl+Y)"
-                  className={`p-1.5 rounded-lg border border-transparent transition-all cursor-pointer ${
-                    canRedo
-                      ? "hover:bg-slate-800 text-slate-200 active:scale-90"
-                      : "opacity-30 cursor-not-allowed text-slate-500"
-                  }`}
-                >
-                  <Redo2Icon className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  title="閉じる (H)"
-                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer active:scale-90"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsDrawerOpen(false);
+                  }}
+                  className="text-gray-500 hover:text-gray-900 p-1 rounded hover:bg-gray-200/50 transition cursor-pointer"
+                  title="パネルを閉じる"
                 >
                   <XIcon className="w-4 h-4" />
                 </button>
               </div>
-            </div>
 
-            {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3.5 custom-scrollbar text-xs">
-              <GridScaleSection
-                params={params}
-                onParamChange={onParamChange}
-              />
-              <MotionSection
-                params={params}
-                onParamChange={onParamChange}
-              />
-              <ColorPaletteSection
-                params={params}
-                onParamChange={onParamChange}
-                onApplyPalette={onApplyPalette}
-                onPickRandomPalette={onPickRandomPalette}
-                onGenerateGradientTheme={onGenerateGradientTheme}
-              />
-              <EffectsSection
-                params={params}
-                onParamChange={onParamChange}
-              />
-              <AutomationSection
-                onRandomizeAll={onRandomizeAll}
-                onStartNLoopRecord={onStartNLoopRecord}
-              />
-              <ExportSection
-                onExportPng={onExportPng}
-                onExportSvg={onExportSvg}
-                onStartRecord={onStartRecord}
-                onStopRecord={onStopRecord}
-                onExportJson={onExportJson}
-                onImportJson={onImportJson}
-              />
+              {/* Fixed Top Quick Action Bar: Random button remains accessible on scroll */}
+              <div className="p-3 border-b border-gray-200/50 space-y-2 flex-shrink-0">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onRandomizeAll}
+                    title="選択された対象パラメータをランダム設定します (スペースキー)"
+                    className="flex-1 bg-gray-900/90 hover:bg-gray-900 active:scale-[0.99] text-white py-2 px-3 rounded font-bold transition flex items-center justify-center gap-2 cursor-pointer text-xs shadow-sm backdrop-blur-xs"
+                  >
+                    <DicesIcon className="w-4 h-4" />
+                    <span>ランダム実行 (Space)</span>
+                  </button>
 
-              {/* Shortcuts Footer Badge */}
-              <div className="pt-1 pb-2 text-[10px] text-slate-400 flex flex-wrap gap-2 items-center justify-center border-t border-slate-800/80">
-                <span>
-                  <span className="kbd-key">Space</span> ランダム
-                </span>
-                <span>
-                  <span className="kbd-key">H</span> パネル
-                </span>
-                <span>
-                  <span className="kbd-key">R</span> 録画開始
-                </span>
-                <span>
-                  <span className="kbd-key">S</span> 停止
-                </span>
-                <span>
-                  <span className="kbd-key">P</span> PNG
-                </span>
-                <span>
-                  <span className="kbd-key">D</span> Debug
-                </span>
-                <span>
-                  <span className="kbd-key">Ctrl+Z</span> Undo
-                </span>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      disabled={!canUndo}
+                      onClick={onUndo}
+                      title="元に戻す (Ctrl+Z)"
+                      className="bg-white/70 hover:bg-white/95 disabled:opacity-40 text-gray-800 border border-gray-300/80 px-2 py-1.5 rounded transition flex items-center justify-center cursor-pointer disabled:cursor-not-allowed text-xs font-medium shadow-xs"
+                    >
+                      <Undo2Icon className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!canRedo}
+                      onClick={onRedo}
+                      title="やり直す (Ctrl+Y)"
+                      className="bg-white/70 hover:bg-white/95 disabled:opacity-40 text-gray-800 border border-gray-300/80 px-2 py-1.5 rounded transition flex items-center justify-center cursor-pointer disabled:cursor-not-allowed text-xs font-medium shadow-xs"
+                    >
+                      <Redo2Icon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen((prev) => !prev)}
+                  title="ランダム化対象の選択ドロワーを右側に開閉します"
+                  className={`w-full py-1.5 rounded border transition flex items-center justify-center gap-1.5 cursor-pointer text-xs ${
+                    isDrawerOpen
+                      ? "bg-gray-200/80 border-gray-400 text-gray-900 font-semibold shadow-inner ring-1 ring-gray-400/40"
+                      : "bg-white/70 hover:bg-white/95 text-gray-700 border-gray-300/80 shadow-xs font-medium"
+                  }`}
+                >
+                  <SlidersHorizontalIcon className="w-3.5 h-3.5" />
+                  <span>
+                    ランダム対象パラメータの選択 {isDrawerOpen ? "◀" : "▶"}
+                  </span>
+                </button>
               </div>
-            </div>
-          </motion.aside>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar text-xs">
+                <OperationsSection onUndo={onUndo} onRedo={onRedo} />
+                <GridScaleSection
+                  params={params}
+                  onParamChange={onParamChange}
+                />
+                <MotionSection
+                  params={params}
+                  onParamChange={onParamChange}
+                />
+                <ColorPaletteSection
+                  params={params}
+                  onParamChange={onParamChange}
+                  onApplyPalette={onApplyPalette}
+                  onPickRandomPalette={onPickRandomPalette}
+                  onShufflePaletteColors={onShufflePaletteColors}
+                  onGenerateGradientTheme={onGenerateGradientTheme}
+                />
+                <EffectsSection
+                  params={params}
+                  onParamChange={onParamChange}
+                />
+                <ExportSection
+                  onExportPng={onExportPng}
+                  onExportSvg={onExportSvg}
+                  onStartRecord={onStartRecord}
+                  onStopRecord={onStopRecord}
+                  onExportJson={onExportJson}
+                  onImportJson={onImportJson}
+                  onStartNLoopRecord={onStartNLoopRecord}
+                  onStopNLoopRecord={onStopNLoopRecord}
+                />
+
+                {/* Shortcuts Footer Badge */}
+                <div className="pt-2 text-[10px] text-gray-500 flex flex-wrap gap-1.5 items-center justify-center border-t border-gray-200/60">
+                  <span>
+                    <span className="kbd-key">Space</span> ランダム
+                  </span>
+                  <span>
+                    <span className="kbd-key">H</span> パネル
+                  </span>
+                  <span>
+                    <span className="kbd-key">R</span> 録画
+                  </span>
+                  <span>
+                    <span className="kbd-key">S</span> 停止
+                  </span>
+                  <span>
+                    <span className="kbd-key">P</span> PNG
+                  </span>
+                  <span>
+                    <span className="kbd-key">D</span> Debug
+                  </span>
+                  <span>
+                    <span className="kbd-key">Ctrl+Z</span> Undo
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Sub-panel Extension for Random Targets */}
+            <RandomTargetsDrawer />
+          </div>
         )}
       </AnimatePresence>
     </>

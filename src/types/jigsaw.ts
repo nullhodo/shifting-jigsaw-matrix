@@ -86,10 +86,19 @@ export interface LayoutBounds {
 }
 
 export interface RandomTargets {
-  grid: boolean;
-  tabs: boolean;
-  speed: boolean;
+  columns: boolean;
+  rows: boolean;
+  tabShapeStyle: boolean;
+  tabSizeFactor: boolean;
+  tabRoundness: boolean;
+  motionProbability: boolean;
+  stepIntervalMilliseconds: boolean;
+  easingDurationMilliseconds: boolean;
+  strokeWidth: boolean;
   palette: boolean;
+  paletteShuffle: boolean;
+  monochromeFillActive: boolean;
+  grainActive: boolean;
 }
 
 export interface RecordingState {

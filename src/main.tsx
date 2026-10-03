@@ -107,6 +107,7 @@ const App: React.FC = () => {
     handleParamChange,
     handleApplyPalette,
     handlePickRandomPalette,
+    handleShufflePaletteColors,
     handleGenerateGradientTheme,
     randomizeSelectedParameters,
     handleUndo,
@@ -470,7 +471,7 @@ const App: React.FC = () => {
   ]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-950 select-none">
+    <div className="relative w-screen h-screen overflow-hidden bg-[#121318] select-none">
       {/* p5 Canvas Container */}
       <div
         ref={p5ContainerRef}
@@ -478,13 +479,14 @@ const App: React.FC = () => {
       />
 
       {/* Recording Overlay */}
-      <RecordingOverlay />
+      <RecordingOverlay onStopRecord={handleStopRecord} />
 
       {/* Control Panel */}
       <ControlPanel
         onParamChange={handleParamChange}
         onApplyPalette={handleApplyPalette}
         onPickRandomPalette={handlePickRandomPalette}
+        onShufflePaletteColors={handleShufflePaletteColors}
         onGenerateGradientTheme={handleGenerateGradientTheme}
         onRandomizeAll={randomizeSelectedParameters}
         onUndo={handleUndo}
@@ -496,6 +498,7 @@ const App: React.FC = () => {
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onStartNLoopRecord={handleStartNLoopRecord}
+        onStopNLoopRecord={handleStopRecord}
       />
     </div>
   );

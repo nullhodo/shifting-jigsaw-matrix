@@ -35,8 +35,17 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
 };
 
 export const DEFAULT_RANDOM_TARGETS: RandomTargets = {
-  grid: true,
-  tabs: true,
-  speed: true,
+  columns: true,
+  rows: true,
+  tabShapeStyle: true,
+  tabSizeFactor: true,
+  tabRoundness: true,
+  motionProbability: true,
+  stepIntervalMilliseconds: true,
+  easingDurationMilliseconds: true,
+  strokeWidth: false,
   palette: true,
+  paletteShuffle: false,
+  monochromeFillActive: false,
+  grainActive: false,
 };

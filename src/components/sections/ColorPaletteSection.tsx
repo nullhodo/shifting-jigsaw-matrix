@@ -1,6 +1,12 @@
-import { DicesIcon, PaletteIcon, Wand2Icon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  PaletteIcon,
+  RefreshCwIcon,
+  ShuffleIcon,
+} from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PRESET_COLOR_PALETTES } from "../../constants/palettes";
 import type {
   JigsawParamValue,
@@ -15,6 +21,7 @@ interface Props {
   ) => void;
   onApplyPalette: (idx: number) => void;
   onPickRandomPalette: () => void;
+  onShufflePaletteColors: () => void;
   onGenerateGradientTheme: (baseHex: string) => void;
 }
 
@@ -23,153 +30,347 @@ export const ColorPaletteSection: React.FC<Props> = ({
   onParamChange,
   onApplyPalette,
   onPickRandomPalette,
+  onShufflePaletteColors,
   onGenerateGradientTheme,
 }) => {
-  const [baseGradientColor, setBaseGradientColor] = useState("#38bdf8");
+  const [baseColor, setBaseColor] = useState("#38bdf8");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const currentPalette =
+    PRESET_COLOR_PALETTES[params.currentPaletteIndex] ||
+    PRESET_COLOR_PALETTES[0];
+
+  const getPaletteGradient = (
+    palette: (typeof PRESET_COLOR_PALETTES)[number],
+    angle = 90,
+  ) => {
+    if (!palette?.colors?.length) return "transparent";
+    const hexes = palette.colors.map((c) => c.hex);
+    if (hexes.length === 1) return hexes[0];
+    return `linear-gradient(${angle}deg, ${hexes.join(", ")})`;
+  };
+
+  const getPaletteSoftGradient = (
+    palette: (typeof PRESET_COLOR_PALETTES)[number],
+    opacity = 0.25,
+    angle = 90,
+  ) => {
+    if (!palette?.colors?.length) return "transparent";
+    const stops = palette.colors.map((c) => {
+      const [r, g, b] = c.rgb;
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    });
+    if (stops.length === 1) return stops[0];
+    return `linear-gradient(${angle}deg, ${stops.join(", ")})`;
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleDropdownOutside = (e: MouseEvent | TouchEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener("pointerdown", handleDropdownOutside);
+    }
+    return () => {
+      document.removeEventListener("pointerdown", handleDropdownOutside);
+    };
+  }, [isDropdownOpen]);
 
   return (
-    <section className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60 space-y-3">
-      <div className="flex items-center justify-between text-slate-200 font-semibold border-b border-slate-700/60 pb-1.5 text-xs">
-        <div className="flex items-center gap-1.5 text-sky-400">
-          <PaletteIcon className="w-3.5 h-3.5" />
-          <span>Palette & Cell Colors</span>
-        </div>
-        <span className="text-[10px] text-sky-400 font-mono">Fills</span>
+    <div className="space-y-3 bg-white/50 backdrop-blur-md p-3.5 rounded-md border border-white/50 shadow-xs relative overflow-hidden">
+      {/* Top accent line colored by current palette */}
+      <div
+        className="h-[3px] absolute top-0 left-0 right-0 transition-all duration-300"
+        style={{ background: getPaletteGradient(currentPalette, 90) }}
+      />
+
+      <div className="font-bold text-gray-900 flex items-center gap-2 text-xs pt-0.5">
+        <PaletteIcon className="w-4 h-4 text-gray-700" />
+        カラーパレット &amp; テーマ
       </div>
 
-      {/* Palette Select */}
-      <div className="space-y-1">
-        <label
-          htmlFor="select-preset-palette"
-          className="block text-xs font-medium text-slate-300"
-        >
-          Preset Palette
-        </label>
-        <select
-          id="select-preset-palette"
-          value={params.currentPaletteIndex}
-          onChange={(e) =>
-            onApplyPalette(Number.parseInt(e.target.value, 10))
-          }
-          className="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:border-sky-500"
-        >
-          {PRESET_COLOR_PALETTES.map((p, idx) => (
-            <option key={`${p.title}_${idx}`} value={idx}>
-              {p.title} ({p.colors.length}色)
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Random Palette Button */}
-      <button
-        type="button"
-        onClick={onPickRandomPalette}
-        className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-medium transition-colors flex items-center justify-center gap-1.5 text-xs border border-slate-700/60 cursor-pointer active:scale-98"
+      {/* Palette Selector with Color Preview Swatches */}
+      <div
+        className="space-y-1 relative"
+        title="カラーパレットのテーマを選択します"
+        ref={dropdownRef}
       >
-        <DicesIcon className="w-3.5 h-3.5 text-sky-400" />
-        <span>Random Palette</span>
-      </button>
+        <span className="text-gray-600 font-medium block mb-1 text-[11px]">
+          プリセットパレット
+        </span>
 
-      {/* Color Swatches */}
-      <div className="space-y-1">
-        <span className="text-[11px] text-slate-400">Palette Colors:</span>
-        <div className="flex flex-wrap gap-1 p-1 bg-slate-950/80 rounded border border-slate-800 max-h-24 overflow-y-auto custom-scrollbar">
-          {params.activeColorPalette.map((colorHex, idx) => (
+        {/* Dropdown Trigger Button - Colored by current palette */}
+        <button
+          type="button"
+          onClick={() => setIsDropdownOpen((prev) => !prev)}
+          style={{
+            background: getPaletteSoftGradient(currentPalette, 0.35, 90),
+          }}
+          className="w-full border border-gray-300/80 hover:border-gray-400 text-gray-900 rounded p-2 text-xs focus:ring-1 focus:ring-gray-800 focus:outline-none cursor-pointer flex items-center justify-between gap-2 shadow-xs transition"
+        >
+          <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
+            {/* Swatch preview with fadeout when many colors */}
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: static preview swatches
-              key={`${colorHex}_${idx}`}
-              className="w-5 h-5 rounded border border-slate-700/80 shadow-sm shrink-0"
-              style={{ backgroundColor: colorHex }}
-              title={colorHex}
-            />
-          ))}
+              className="flex gap-0.5 flex-shrink-0 p-0.5 bg-white/80 backdrop-blur-xs rounded border border-gray-200 shadow-2xs max-w-[108px] overflow-hidden"
+              style={
+                currentPalette.colors.length > 5
+                  ? {
+                      maskImage:
+                        "linear-gradient(to right, black calc(100% - 20px), transparent 100%)",
+                      WebkitMaskImage:
+                        "linear-gradient(to right, black calc(100% - 20px), transparent 100%)",
+                    }
+                  : undefined
+              }
+            >
+              {currentPalette.colors.map((c) => (
+                <div
+                  key={c.hex}
+                  className="w-3.5 h-3.5 rounded-[2px] flex-shrink-0"
+                  style={{ backgroundColor: c.hex }}
+                />
+              ))}
+            </div>
+            <span className="font-semibold truncate text-gray-900 text-[11px] drop-shadow-2xs min-w-0 flex-1">
+              {currentPalette.title}
+            </span>
+          </div>
+          <ChevronDownIcon
+            className={`w-3.5 h-3.5 text-gray-600 flex-shrink-0 transition-transform duration-200 ${
+              isDropdownOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* Dropdown Menu Overlay */}
+        {isDropdownOpen && (
+          <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white/90 backdrop-blur-xl border border-gray-200/80 rounded-md shadow-2xl max-h-64 overflow-y-auto custom-scrollbar p-1.5 space-y-1.5">
+            {PRESET_COLOR_PALETTES.map((pal, idx) => {
+              const isSelected = idx === params.currentPaletteIndex;
+              return (
+                <button
+                  type="button"
+                  key={`${pal.title}_${idx}`}
+                  onClick={() => {
+                    onApplyPalette(idx);
+                    setIsDropdownOpen(false);
+                  }}
+                  style={{
+                    background: isSelected
+                      ? getPaletteSoftGradient(pal, 0.45, 90)
+                      : getPaletteSoftGradient(pal, 0.18, 90),
+                  }}
+                  className={`w-full text-left p-2.5 rounded-md flex flex-col gap-1.5 transition-all cursor-pointer text-xs border relative overflow-hidden ${
+                    isSelected
+                      ? "border-gray-900/60 shadow-sm ring-1 ring-gray-900/30"
+                      : "border-gray-200/60 hover:border-gray-400 hover:brightness-95"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 relative z-10">
+                    <span className="font-bold text-[11px] text-gray-900 drop-shadow-2xs truncate min-w-0 flex-1">
+                      {pal.title}
+                    </span>
+                    {isSelected && (
+                      <span className="flex items-center gap-1 bg-white/90 backdrop-blur-xs px-1.5 py-0.5 rounded text-[10px] font-bold text-gray-900 border border-gray-200/80 shadow-2xs flex-shrink-0">
+                        <CheckIcon className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                        選択中
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Swatches & Comment */}
+                  <div className="flex items-center justify-between gap-2 relative z-10">
+                    <div
+                      className="flex gap-1 flex-shrink-0 p-0.5 bg-white/80 backdrop-blur-xs rounded border border-gray-200/80 shadow-2xs max-w-[130px] overflow-hidden"
+                      style={
+                        pal.colors.length > 5
+                          ? {
+                              maskImage:
+                                "linear-gradient(to right, black calc(100% - 18px), transparent 100%)",
+                              WebkitMaskImage:
+                                "linear-gradient(to right, black calc(100% - 18px), transparent 100%)",
+                            }
+                          : undefined
+                      }
+                    >
+                      {pal.colors.map((c) => (
+                        <div
+                          key={c.hex}
+                          className="w-4 h-4 rounded-[2px] border border-black/10 shadow-2xs flex-shrink-0"
+                          style={{ backgroundColor: c.hex }}
+                          title={`${c.name} (${c.hex})`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-gray-700 font-medium truncate text-right bg-white/70 backdrop-blur-xs px-1.5 py-0.5 rounded border border-white/60 min-w-0 flex-1">
+                      {pal.comment}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Palette Colors Display - Colored by current palette */}
+      <div className="space-y-1.5 pt-1.5">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="text-gray-600 font-medium">
+            現在のパレット色:
+          </span>
+          <span className="text-[10px] font-semibold text-gray-700 bg-white/75 backdrop-blur-xs px-2 py-0.5 rounded border border-white/60 truncate max-w-[150px]">
+            {currentPalette.title} ({params.activeColorPalette.length}色)
+          </span>
         </div>
+        <div
+          className="flex items-center gap-1.5 p-2 rounded border border-gray-200/80 shadow-xs relative overflow-hidden transition-all duration-300"
+          style={{
+            background: getPaletteSoftGradient(currentPalette, 0.3, 90),
+          }}
+        >
+          <div
+            className="flex gap-1.5 overflow-x-auto custom-scrollbar pt-0.5 pb-2.5 px-0.5 flex-1 min-w-0"
+            style={
+              params.activeColorPalette.length > 7
+                ? {
+                    maskImage:
+                      "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
+                    WebkitMaskImage:
+                      "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
+                  }
+                : undefined
+            }
+          >
+            {params.activeColorPalette.map((hex, idx) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: palette swatches
+                key={`${hex}_${idx}`}
+                className="w-5 h-5 rounded border border-black/15 flex-shrink-0 shadow-xs transition-transform hover:scale-110 cursor-default"
+                style={{ backgroundColor: hex }}
+                title={hex}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onPickRandomPalette}
+          title="ランダムにパレットを選択します"
+          className="flex-1 bg-white/70 hover:bg-white/95 text-gray-800 border border-gray-300/80 py-1.5 rounded text-xs transition flex items-center justify-center gap-1.5 cursor-pointer font-medium shadow-xs"
+        >
+          <ShuffleIcon className="w-3.5 h-3.5" />
+          ランダムパレット
+        </button>
+        <button
+          type="button"
+          onClick={onShufflePaletteColors}
+          title="現在のパレット内で色割り当てをシャッフルします"
+          className="flex-1 bg-white/70 hover:bg-white/95 text-gray-800 border border-gray-300/80 py-1.5 rounded text-xs transition flex items-center justify-center gap-1.5 cursor-pointer font-medium shadow-xs"
+        >
+          <RefreshCwIcon className="w-3.5 h-3.5" />
+          配色シャッフル
+        </button>
       </div>
 
       {/* Monochrome Piece Mode */}
-      <div className="space-y-1 pt-1 border-t border-slate-800/80">
+      <div className="pt-2 border-t border-gray-200/60 space-y-1.5">
         <div className="flex items-center justify-between">
-          <label
-            htmlFor="cb-monochrome"
-            className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300"
-          >
+          <span className="text-[11px] text-gray-700 font-semibold">
+            単色ピースモード (Monochrome)
+          </span>
+          <div className="flex items-center gap-2">
             <input
-              id="cb-monochrome"
-              type="checkbox"
-              checked={params.monochromeFillActive}
-              onChange={(e) =>
-                onParamChange("monochromeFillActive", e.target.checked)
-              }
-              className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+              type="color"
+              value={params.singlePieceColorHex}
+              onChange={(e) => {
+                onParamChange("singlePieceColorHex", e.target.value);
+                if (!params.monochromeFillActive) {
+                  onParamChange("monochromeFillActive", true);
+                }
+              }}
+              className="w-6 h-6 rounded border border-gray-300 bg-white cursor-pointer"
+              title="単色ピースの色"
             />
-            <span>Monochrome Pieces (単色モード)</span>
-          </label>
-          <input
-            type="color"
-            value={params.singlePieceColorHex}
-            onChange={(e) => {
-              onParamChange("singlePieceColorHex", e.target.value);
-              if (!params.monochromeFillActive) {
-                onParamChange("monochromeFillActive", true);
-              }
-            }}
-            className="w-6 h-6 bg-transparent border-0 rounded cursor-pointer"
-          />
+            <label
+              className="relative inline-flex items-center cursor-pointer select-none"
+              title="全ピースを単色にして境界線のスライドを強調します"
+            >
+              <input
+                type="checkbox"
+                checked={params.monochromeFillActive}
+                className="sr-only peer"
+                onChange={(e) =>
+                  onParamChange("monochromeFillActive", e.target.checked)
+                }
+              />
+              <div className="w-9 h-5 bg-gray-200/80 border border-gray-300/80 rounded-full peer peer-checked:bg-emerald-600 peer-checked:border-emerald-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-transform peer-checked:after:translate-x-4 shadow-2xs" />
+            </label>
+          </div>
         </div>
-        <p className="text-[10px] text-slate-400 leading-tight">
+        <p className="text-[9.5px] text-gray-500 leading-tight">
           全ピースを1色に固定し、境界線スライドをグラフィカルに強調
         </p>
       </div>
 
       {/* Background Color */}
-      <div className="space-y-1 pt-1 border-t border-slate-800/80">
-        <div className="flex items-center justify-between">
-          <label htmlFor="input-bg-col" className="text-xs text-slate-300">
-            Background Color
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] text-slate-400">
-              {params.backgroundColorHex}
-            </span>
-            <input
-              id="input-bg-col"
-              type="color"
-              value={params.backgroundColorHex}
-              onChange={(e) =>
-                onParamChange("backgroundColorHex", e.target.value)
-              }
-              className="w-6 h-6 bg-transparent border-0 rounded cursor-pointer"
-            />
-          </div>
+      <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between">
+        <div>
+          <span className="text-[11px] text-gray-700 font-semibold block">
+            背景色 (Background)
+          </span>
+          <span className="text-[9.5px] text-gray-500">
+            ※背景色はピース配色から自動除外
+          </span>
         </div>
-        <p className="text-[10px] text-slate-400 leading-tight">
-          ※背景色に選ばれた色はセル塗りつぶしから自動除外されます
-        </p>
-      </div>
-
-      {/* Generate Monochromatic Gradient Theme */}
-      <div className="space-y-2 pt-2 border-t border-slate-800/80">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-slate-300">
-            Generate Theme from Base Color
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] text-gray-500">
+            {params.backgroundColorHex}
           </span>
           <input
             type="color"
-            value={baseGradientColor}
-            onChange={(e) => setBaseGradientColor(e.target.value)}
-            className="w-6 h-6 bg-transparent border-0 rounded cursor-pointer"
+            value={params.backgroundColorHex}
+            onChange={(e) =>
+              onParamChange("backgroundColorHex", e.target.value)
+            }
+            className="w-7 h-7 rounded border border-gray-300 bg-white cursor-pointer"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => onGenerateGradientTheme(baseGradientColor)}
-          className="w-full py-1.5 bg-sky-950/70 hover:bg-sky-900 border border-sky-600/60 text-sky-200 rounded font-medium transition-colors text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
-        >
-          <Wand2Icon className="w-3.5 h-3.5 text-sky-400" />
-          <span>Create Gradient Theme</span>
-        </button>
       </div>
-    </section>
+
+      {/* Gradient Theme Generator */}
+      <div className="pt-2 border-t border-gray-200/60 space-y-2">
+        <span className="text-gray-600 block font-medium text-[11px]">
+          単色からグラデーションテーマを作成
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={baseColor}
+            onChange={(e) => setBaseColor(e.target.value)}
+            className="w-8 h-8 rounded border border-gray-300 cursor-pointer bg-white"
+            title="ベース色を選択"
+          />
+          <button
+            type="button"
+            onClick={() => onGenerateGradientTheme(baseColor)}
+            title="選択した色から複数のグラデーション色を生成します"
+            className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-1.5 rounded text-xs transition font-medium shadow-sm cursor-pointer"
+          >
+            グラデーション生成
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };

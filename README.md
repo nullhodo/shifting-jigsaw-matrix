@@ -67,15 +67,17 @@ shifting-jigsaw-matrix/
     │   ├── useJigsawHandlers.ts - パラメータ操作・Undo/Redo・パレット更新ハンドラー
     │   └── useWheelRangeSlider.ts - スライダーのマウスホイールスクロール制御
     ├── components/
-    │   ├── ControlPanel.tsx    - グラスモルフィズム設定パネルコンテナ
-    │   ├── RecordingOverlay.tsx - 録画中ステータス・N-Loop進行状況 HUD
+    │   ├── ControlPanel.tsx    - グラスモルフィズム設定パネルコンテナ (上部クイック操作・外部クリック閉じ対応)
+    │   ├── RecordingOverlay.tsx - 録画中ステータス・進捗バー・N-Loop進行状況 HUD
+    │   ├── drawers/
+    │   │   └── RandomTargetsDrawer.tsx - ランダム化対象選択サブドロワー
     │   └── sections/
-    │       ├── GridScaleSection.tsx    - グリッド列・行数・タブ形状スタイル設定
+    │       ├── OperationsSection.tsx   - 自動ランダム更新・周期スライダー・Undo/Redo
+    │       ├── GridScaleSection.tsx    - グリッド列・行数・1:1比率・タブ形状スタイル設定
     │       ├── MotionSection.tsx       - 活動確率・判定間隔・イージング時間・線幅設定
-    │       ├── ColorPaletteSection.tsx - パレット選択・単色モード・グラデーション生成
+    │       ├── ColorPaletteSection.tsx - パレットプレビュー・配色シャッフル・単色モード・グラデーション生成
     │       ├── EffectsSection.tsx      - グレインノイズ質感・デバッグオーバーレイ
-    │       ├── AutomationSection.tsx   - 即時ランダム・自動サイクル・N-Loop録画
-    │       └── ExportSection.tsx       - PNG / SVG / MP4 / JSON 保存・読み込み
+    │       └── ExportSection.tsx       - 高解像度PNG / SVG / MP4 / Nループ録画 / JSON 保存・読み込み
     └── tests/
         ├── geometry.test.ts    - タブ幾何計算・アスペクト比制限の単体テスト
         ├── motion.test.ts      - イージング関数・境界線移動計算の単体テスト

@@ -192,28 +192,47 @@ export function useJigsawHandlers() {
     showToast(`グラデーションテーマ生成: ${baseColorHex}`);
   };
 
+  const handleShufflePaletteColors = () => {
+    const shuffled = [...params.activeColorPalette].sort(
+      () => Math.random() - 0.5,
+    );
+    const updated = { ...params, activeColorPalette: shuffled };
+    pushHistory(updated);
+    setParams(updated);
+    setColorGrid(
+      initializeJigsawGrid(params.columns, params.rows, shuffled),
+    );
+    showToast("パレット配色をシャッフルしました");
+  };
+
   const randomizeSelectedParameters = () => {
     const updated = { ...params };
 
-    if (randomTargets.grid) {
+    if (randomTargets.columns || randomTargets.rows) {
       if (updated.keepSquarePieceAspect) {
         const w = window.innerWidth || 800;
         const h = window.innerHeight || 600;
         const bounds = calculateConstrainedPuzzleDimensions(w, h);
         const aspect = bounds.availableWidth / bounds.availableHeight;
-        const newCols = Math.floor(Math.random() * 8) + 4;
+        const newCols = randomTargets.columns
+          ? Math.floor(Math.random() * 8) + 3
+          : updated.columns;
         updated.columns = newCols;
         updated.rows = Math.max(
           2,
           Math.min(16, Math.round(newCols / aspect)),
         );
       } else {
-        updated.columns = Math.floor(Math.random() * 8) + 3;
-        updated.rows = Math.floor(Math.random() * 8) + 3;
+        if (randomTargets.columns) {
+          updated.columns = Math.floor(Math.random() * 8) + 3;
+        }
+        if (randomTargets.rows) {
+          updated.rows = Math.floor(Math.random() * 8) + 3;
+        }
       }
     }
 
-    if (randomTargets.tabs) {
+    if (randomTargets.tabShapeStyle) {
       const styles = [
         "classic",
         "bulb",
@@ -223,18 +242,40 @@ export function useJigsawHandlers() {
       ] as const;
       updated.tabShapeStyle =
         styles[Math.floor(Math.random() * styles.length)];
-      updated.tabSizeFactor = 0.1 + Math.random() * 0.16;
-      updated.tabRoundness = 0.15 + Math.random() * 0.4;
     }
 
-    if (randomTargets.speed) {
+    if (randomTargets.tabSizeFactor) {
+      updated.tabSizeFactor = Number(
+        (0.08 + Math.random() * 0.18).toFixed(2),
+      );
+    }
+
+    if (randomTargets.tabRoundness) {
+      updated.tabRoundness = Number(
+        (0.15 + Math.random() * 0.4).toFixed(2),
+      );
+    }
+
+    if (randomTargets.motionProbability) {
+      updated.motionProbability = Number(
+        (0.25 + Math.random() * 0.6).toFixed(2),
+      );
+    }
+
+    if (randomTargets.stepIntervalMilliseconds) {
       updated.stepIntervalMilliseconds = Math.floor(
         600 + Math.random() * 1800,
       );
+    }
+
+    if (randomTargets.easingDurationMilliseconds) {
       updated.easingDurationMilliseconds = Math.floor(
         300 + Math.random() * 600,
       );
-      updated.motionProbability = 0.3 + Math.random() * 0.55;
+    }
+
+    if (randomTargets.strokeWidth) {
+      updated.strokeWidth = Number((1.0 + Math.random() * 4.0).toFixed(1));
     }
 
     if (randomTargets.palette) {
@@ -251,6 +292,18 @@ export function useJigsawHandlers() {
       updated.currentPaletteIndex = randIdx;
       updated.activeColorPalette =
         filtered.length > 0 ? filtered : chosen.colors.map((c) => c.hex);
+    } else if (randomTargets.paletteShuffle) {
+      updated.activeColorPalette = [...updated.activeColorPalette].sort(
+        () => Math.random() - 0.5,
+      );
+    }
+
+    if (randomTargets.monochromeFillActive) {
+      updated.monochromeFillActive = Math.random() > 0.5;
+    }
+
+    if (randomTargets.grainActive) {
+      updated.grainActive = Math.random() > 0.3;
     }
 
     pushHistory(updated);
@@ -348,6 +401,7 @@ export function useJigsawHandlers() {
     handleParamChange,
     handleApplyPalette,
     handlePickRandomPalette,
+    handleShufflePaletteColors,
     handleGenerateGradientTheme,
     randomizeSelectedParameters,
     handleUndo,

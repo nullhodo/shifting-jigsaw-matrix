@@ -1,14 +1,16 @@
 import { useAtom } from "jotai";
 import {
-  DownloadIcon,
   FileCodeIcon,
-  ImageIcon,
-  UploadIcon,
+  FileDownIcon,
+  SquareIcon,
   VideoIcon,
 } from "lucide-react";
 import type React from "react";
-import { useRef } from "react";
-import { recordingStateAtom } from "../../state/jigsawStore";
+import {
+  isLoopRecordingActiveAtom,
+  recordingStateAtom,
+  targetLoopsCountAtom,
+} from "../../state/jigsawStore";
 
 interface Props {
   onExportPng: () => void;
@@ -16,7 +18,9 @@ interface Props {
   onStartRecord: () => void;
   onStopRecord: () => void;
   onExportJson: () => void;
-  onImportJson: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImportJson: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onStartNLoopRecord: (loopCount: number) => void;
+  onStopNLoopRecord: () => void;
 }
 
 export const ExportSection: React.FC<Props> = ({
@@ -26,111 +30,136 @@ export const ExportSection: React.FC<Props> = ({
   onStopRecord,
   onExportJson,
   onImportJson,
+  onStartNLoopRecord,
+  onStopNLoopRecord,
 }) => {
-  const [recState] = useAtom(recordingStateAtom);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [recordingState] = useAtom(recordingStateAtom);
+  const [targetLoops, setTargetLoops] = useAtom(targetLoopsCountAtom);
+  const [isLoopRecordingActive] = useAtom(isLoopRecordingActiveAtom);
 
   return (
-    <section className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60 space-y-3">
-      <div className="flex items-center justify-between text-slate-200 font-semibold border-b border-slate-700/60 pb-1.5 text-xs">
-        <div className="flex items-center gap-1.5 text-sky-400">
-          <DownloadIcon className="w-3.5 h-3.5" />
-          <span>Export & Storage</span>
-        </div>
-        <span className="text-[10px] text-sky-400 font-mono">
-          Hi-Res & MP4
-        </span>
+    <div className="space-y-3 bg-white/50 backdrop-blur-md p-3.5 rounded-md border border-white/50 shadow-xs">
+      <div className="font-bold text-gray-900 flex items-center gap-2 text-xs">
+        <FileCodeIcon className="w-4 h-4 text-gray-700" /> 出力 &amp; 保存
       </div>
 
-      {/* Hi-Res PNG */}
-      <button
-        type="button"
-        onClick={onExportPng}
-        className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-lg shadow-indigo-950/50 transition-colors text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
-      >
-        <ImageIcon className="w-4 h-4" />
-        <span>Export Hi-Res Image (2880px) + JSON (P)</span>
-      </button>
-
-      {/* Vector SVG */}
-      <button
-        type="button"
-        onClick={onExportSvg}
-        className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded font-medium transition-colors text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
-      >
-        <FileCodeIcon className="w-3.5 h-3.5 text-sky-400" />
-        <span>Export Vector SVG Graphics</span>
-      </button>
-
-      {/* 60fps MP4 Video Recording */}
-      <div className="space-y-1.5 pt-1 border-t border-slate-800/80">
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={recState.isRecording}
-            onClick={onStartRecord}
-            className={`py-1.5 rounded font-medium transition-colors text-xs flex items-center justify-center gap-1.5 ${
-              recState.isRecording
-                ? "bg-slate-800 opacity-50 cursor-not-allowed text-slate-500"
-                : "bg-rose-600 hover:bg-rose-500 text-white cursor-pointer active:scale-98"
-            }`}
-          >
-            <VideoIcon className="w-3.5 h-3.5" />
-            <span>Rec 60fps</span>
-            <span className="kbd-key text-[10px]">R</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={!recState.isRecording}
-            onClick={onStopRecord}
-            className={`py-1.5 rounded font-medium transition-colors text-xs flex items-center justify-center gap-1.5 ${
-              !recState.isRecording
-                ? "bg-slate-800 opacity-50 cursor-not-allowed text-slate-500"
-                : "bg-rose-900 hover:bg-rose-800 text-rose-100 border border-rose-600 cursor-pointer active:scale-98"
-            }`}
-          >
-            <span>Stop & Save</span>
-            <span className="kbd-key text-[10px]">S</span>
-          </button>
-        </div>
-        <p className="text-[10px] text-slate-400 leading-tight">
-          H.264 / mp4-muxer による 60fps 高画質 MP4 を直接生成
-        </p>
+      {/* Image Exports */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={onExportPng}
+          title="縦横2880pxの高解像度PNG画像とJSON設定を出力します"
+          className="bg-gray-900/90 hover:bg-gray-900 text-white py-2 rounded font-medium transition flex items-center justify-center gap-1.5 text-xs cursor-pointer shadow-xs active:scale-[0.99]"
+        >
+          高解像度PNG
+        </button>
+        <button
+          type="button"
+          onClick={onExportSvg}
+          title="p5.js-svg を使用してベクターSVG画像を出力します"
+          className="bg-white/70 hover:bg-white/95 text-gray-800 border border-gray-300/80 py-2 rounded font-medium transition flex items-center justify-center gap-1.5 text-xs cursor-pointer shadow-xs"
+        >
+          SVG
+        </button>
       </div>
 
-      {/* JSON Backup & Restore */}
-      <div className="space-y-1.5 pt-1.5 border-t border-slate-800/80">
-        <span className="text-[11px] text-slate-400 font-medium block">
-          Preset JSON Backup & Restore:
-        </span>
-        <div className="grid grid-cols-2 gap-2">
+      {/* Manual MP4 Recording */}
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200/60">
+        <button
+          type="button"
+          disabled={recordingState.isRecording}
+          onClick={onStartRecord}
+          title="mp4-muxer / WebCodecs で動画録画を開始します (Rキー)"
+          className="bg-white/70 hover:bg-white/95 text-gray-800 border border-gray-300/80 py-2 rounded font-medium transition flex items-center justify-center gap-1.5 text-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+        >
+          <VideoIcon className="w-4 h-4" /> 手動録画 (R)
+        </button>
+        <button
+          type="button"
+          disabled={!recordingState.isRecording}
+          onClick={onStopRecord}
+          title="録画を停止して動画とJSONを出力します (Sキー)"
+          className="bg-white/70 hover:bg-white/95 disabled:opacity-40 text-gray-800 border border-gray-300/80 py-2 rounded font-medium transition flex items-center justify-center gap-1.5 text-xs cursor-pointer disabled:cursor-not-allowed shadow-xs"
+        >
+          <VideoIcon className="w-4 h-4" /> 録画停止 (S)
+        </button>
+      </div>
+
+      {/* Exact N-Loop MP4 Recording */}
+      <div className="space-y-2 pt-2 border-t border-gray-200/60">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-700 font-semibold">
+            Nループ指定 MP4録画
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-600 font-medium text-[11px]">
+              ループ数:
+            </span>
+            <select
+              value={targetLoops}
+              onChange={(e) =>
+                setTargetLoops(Number.parseInt(e.target.value, 10))
+              }
+              className="bg-white/70 hover:bg-white/95 border border-gray-300/80 rounded px-2 py-0.5 text-xs text-gray-900 cursor-pointer shadow-2xs"
+            >
+              {[1, 2, 3, 4, 5, 6, 8, 10, 15, 20].map((n) => (
+                <option key={n} value={n}>
+                  {n} ループ
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {isLoopRecordingActive ? (
+          <button
+            type="button"
+            onClick={onStopNLoopRecord}
+            className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-semibold transition flex items-center justify-center gap-2 text-xs cursor-pointer animate-pulse shadow-sm"
+          >
+            <SquareIcon className="w-4 h-4 fill-white" />
+            Nループ録画を停止 (録画中)
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={recordingState.isRecording}
+            onClick={() => onStartNLoopRecord(targetLoops)}
+            title="指定したNループ分だけ自動ランダム更新しながらMP4動画を自動撮影します"
+            className="w-full bg-white/70 hover:bg-white/95 text-gray-800 border border-gray-300/80 py-2 rounded font-medium transition flex items-center justify-center gap-1.5 text-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+          >
+            <VideoIcon className="w-4 h-4" />
+            {targetLoops} ループ分を自動録画 (MP4)
+          </button>
+        )}
+      </div>
+
+      {/* JSON File Export / Import */}
+      <div className="pt-2 border-t border-gray-200/60 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-700 font-semibold text-xs">
+            JSON設定ファイル
+          </span>
           <button
             type="button"
             onClick={onExportJson}
-            className="py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded font-medium transition-colors text-xs flex items-center justify-center gap-1 cursor-pointer active:scale-98"
+            title="現在のパラメータとランダム化対象設定をJSONファイルとして保存します"
+            className="px-2.5 py-1 bg-white/70 hover:bg-white/95 text-gray-800 border border-gray-300/80 rounded text-xs font-medium transition flex items-center gap-1 cursor-pointer shadow-xs"
           >
-            <DownloadIcon className="w-3.5 h-3.5 text-sky-400" />
-            <span>Export JSON</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded font-medium transition-colors text-xs flex items-center justify-center gap-1 cursor-pointer active:scale-98"
-          >
-            <UploadIcon className="w-3.5 h-3.5 text-sky-400" />
-            <span>Load JSON</span>
+            <FileDownIcon className="w-3.5 h-3.5" /> JSON保存
           </button>
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          onChange={onImportJson}
-          className="hidden"
-        />
+
+        <div title="過去に保存したJSONファイルを読み込んでパラメータやランダム設定を再現します">
+          <input
+            type="file"
+            id="file-json-input"
+            accept=".json"
+            onChange={onImportJson}
+            className="w-full text-xs text-gray-600 file:mr-2 file:py-1 file:px-3 file:rounded file:border file:border-gray-300/80 file:text-xs file:font-semibold file:bg-white/80 file:text-gray-800 hover:file:bg-white cursor-pointer"
+          />
+        </div>
       </div>
-    </section>
+    </div>
   );
 };

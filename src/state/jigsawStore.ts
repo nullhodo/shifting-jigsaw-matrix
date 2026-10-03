@@ -24,6 +24,7 @@ export const historyStackAtom = atom<JigsawParameters[]>([
 export const historyPointerAtom = atom<number>(0);
 
 export const isPanelOpenAtom = atom<boolean>(true);
+export const isRandomTargetsModalOpenAtom = atom<boolean>(false);
 
 export const recordingStateAtom = atom<RecordingState>({
   isRecording: false,
