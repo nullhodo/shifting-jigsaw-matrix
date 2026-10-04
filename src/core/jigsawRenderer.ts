@@ -7,6 +7,7 @@ import {
   renderJigsawEdgeSegment,
   traceJigsawTabClosedPath,
 } from "./geometry";
+import { interpolateHexColor } from "./reactiveColoring";
 
 /**
  * グリッドのセル固定色を初期化（隣接セルと色が被らないように選択）
@@ -173,6 +174,7 @@ export function renderCompleteJigsawPuzzle(
   verticalBoundaryLines: BoundaryLine[],
   grainBuffer: p5.Graphics | null = null,
   isExportMode = false,
+  pieceActivationGrid?: number[][],
 ): void {
   if (
     !rendererTarget ||
@@ -195,25 +197,39 @@ export function renderCompleteJigsawPuzzle(
   const singleCellWidth = availableWidth / columnsCount;
   const singleCellHeight = availableHeight / rowsCount;
 
+  // ピースおよび出っ張りタブの色を一元解決するヘルパー
+  const paletteColors = params.activeColorPalette;
+  const getPieceColorAt = (r: number, c: number): string => {
+    if (params.reactiveFadeMode && pieceActivationGrid) {
+      const activation = pieceActivationGrid[r]?.[c] ?? 0;
+      const baseColor =
+        params.reactiveBaseColorHex ||
+        params.singlePieceColorHex ||
+        "#1e293b";
+      const targetColor =
+        pieceFixedColorGrid[r]?.[c] ||
+        paletteColors[(r * columnsCount + c) % paletteColors.length] ||
+        "#38bdf8";
+      return interpolateHexColor(baseColor, targetColor, activation);
+    }
+    if (params.monochromeFillActive) {
+      return params.singlePieceColorHex;
+    }
+    return (
+      pieceFixedColorGrid[r]?.[c] ||
+      paletteColors[(r * columnsCount + c) % paletteColors.length] ||
+      "#38bdf8"
+    );
+  };
+
   // 1. 全体背景描画
   rendererTarget.background(params.backgroundColorHex || "#090d16");
 
   // 2. 四角形セルごとの単色塗りつぶし
   rendererTarget.noStroke();
-  const paletteColors = params.activeColorPalette;
   for (let r = 0; r < rowsCount; r++) {
     for (let c = 0; c < columnsCount; c++) {
-      let pieceColor: string;
-      if (params.monochromeFillActive) {
-        pieceColor = params.singlePieceColorHex;
-      } else {
-        pieceColor =
-          pieceFixedColorGrid[r]?.[c] ||
-          paletteColors[(r * columnsCount + c) % paletteColors.length] ||
-          "#38bdf8";
-      }
-
-      rendererTarget.fill(pieceColor);
+      rendererTarget.fill(getPieceColorAt(r, c));
       const cellOriginX = gridLeft + c * singleCellWidth;
       const cellOriginY = gridTop + r * singleCellHeight;
       rendererTarget.rect(
@@ -299,9 +315,7 @@ export function renderCompleteJigsawPuzzle(
       );
 
       if (startCol === endCol) {
-        const cellColor = params.monochromeFillActive
-          ? params.singlePieceColorHex
-          : pieceFixedColorGrid[rootRow]?.[startCol] || paletteColors[0];
+        const cellColor = getPieceColorAt(rootRow, startCol);
         context2D.fillStyle = cellColor;
         traceJigsawTabClosedPath(context2D, geometry);
         context2D.fill();
@@ -316,9 +330,7 @@ export function renderCompleteJigsawPuzzle(
 
         for (let col = startCol; col <= endCol; col++) {
           const colStartX = gridLeft + col * singleCellWidth;
-          const cellColor = params.monochromeFillActive
-            ? params.singlePieceColorHex
-            : pieceFixedColorGrid[rootRow]?.[col] || paletteColors[0];
+          const cellColor = getPieceColorAt(rootRow, col);
           context2D.fillStyle = cellColor;
           context2D.fillRect(
             colStartX,
@@ -394,9 +406,7 @@ export function renderCompleteJigsawPuzzle(
       );
 
       if (startRow === endRow) {
-        const cellColor = params.monochromeFillActive
-          ? params.singlePieceColorHex
-          : pieceFixedColorGrid[startRow]?.[rootCol] || paletteColors[0];
+        const cellColor = getPieceColorAt(startRow, rootCol);
         context2D.fillStyle = cellColor;
         traceJigsawTabClosedPath(context2D, geometry);
         context2D.fill();
@@ -411,9 +421,7 @@ export function renderCompleteJigsawPuzzle(
 
         for (let row = startRow; row <= endRow; row++) {
           const rowStartY = gridTop + row * singleCellHeight;
-          const cellColor = params.monochromeFillActive
-            ? params.singlePieceColorHex
-            : pieceFixedColorGrid[row]?.[rootCol] || paletteColors[0];
+          const cellColor = getPieceColorAt(row, rootCol);
           context2D.fillStyle = cellColor;
           context2D.fillRect(
             tabMinX,

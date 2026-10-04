@@ -23,6 +23,7 @@ import {
   safelyDisposeGraphics,
 } from "./core/jigsawRenderer";
 import { updateBoundaryLinesMotion } from "./core/motion";
+import { updatePieceActivations } from "./core/reactiveColoring";
 import { VideoRecorderManager } from "./core/recorder";
 import { useJigsawHandlers } from "./hooks/useJigsawHandlers";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -77,6 +78,8 @@ const App: React.FC = () => {
     cycleStartTimestamp: -1,
     triggeredBurstsInCycle: 0,
   });
+  const pieceActivationGridRef = useRef<number[][]>([]);
+  const lastPieceTriggerTimestampsRef = useRef<number[][]>([]);
 
   const loopTimerRef = useRef<{
     timeouts: ReturnType<typeof setTimeout>[];
@@ -231,6 +234,9 @@ const App: React.FC = () => {
         horizontalLinesRef.current,
         verticalLinesRef.current,
         2880,
+        paramsRef.current.reactiveFadeMode
+          ? pieceActivationGridRef.current
+          : undefined,
       );
       showToast("高解像度 PNG と JSON 設定を出力しました");
     }
@@ -245,6 +251,9 @@ const App: React.FC = () => {
         horizontalLinesRef.current,
         verticalLinesRef.current,
         1920,
+        paramsRef.current.reactiveFadeMode
+          ? pieceActivationGridRef.current
+          : undefined,
       );
       showToast("ベクター SVG を出力しました");
     }
@@ -435,6 +444,24 @@ const App: React.FC = () => {
           lastGrainIntensityRef.current = -1;
         }
 
+        // Update piece activations for reactive fade coloring mode
+        const now = performance.now();
+        if (currentParams.reactiveFadeMode) {
+          const actResult = updatePieceActivations(
+            currentParams.rows,
+            currentParams.columns,
+            currentH,
+            currentV,
+            now,
+            currentParams.fadeDurationMs,
+            lastPieceTriggerTimestampsRef.current,
+            currentParams.easingDurationMilliseconds,
+          );
+          pieceActivationGridRef.current = actResult.activationGrid;
+          lastPieceTriggerTimestampsRef.current =
+            actResult.updatedTriggerTimestamps;
+        }
+
         renderCompleteJigsawPuzzle(
           p,
           p.width,
@@ -445,6 +472,9 @@ const App: React.FC = () => {
           currentV,
           grainBufferRef.current,
           false,
+          currentParams.reactiveFadeMode
+            ? pieceActivationGridRef.current
+            : undefined,
         );
       };
 

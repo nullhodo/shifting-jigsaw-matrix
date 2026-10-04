@@ -27,6 +27,9 @@ export interface JigsawParameters {
   tabRoundness: number;
   monochromeFillActive: boolean;
   singlePieceColorHex: string;
+  reactiveFadeMode: boolean;
+  fadeDurationMs: number;
+  reactiveBaseColorHex: string;
   motionProbability: number;
   stepIntervalMilliseconds: number;
   burstCount: number;
@@ -104,6 +107,7 @@ export interface RandomTargets {
   palette: boolean;
   paletteShuffle: boolean;
   monochromeFillActive: boolean;
+  reactiveFadeMode: boolean;
   grainActive: boolean;
 }
 

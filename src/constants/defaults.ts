@@ -17,6 +17,9 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
   tabRoundness: 0.28,
   monochromeFillActive: false,
   singlePieceColorHex: "#e2ad3e",
+  reactiveFadeMode: false,
+  fadeDurationMs: 1800,
+  reactiveBaseColorHex: "#1e293b",
   motionProbability: 0.5,
   stepIntervalMilliseconds: 1200,
   burstCount: 2,
@@ -51,5 +54,6 @@ export const DEFAULT_RANDOM_TARGETS: RandomTargets = {
   palette: true,
   paletteShuffle: false,
   monochromeFillActive: false,
+  reactiveFadeMode: false,
   grainActive: false,
 };

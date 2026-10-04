@@ -30,6 +30,7 @@ export function exportHighResolutionImageWithMetadata(
   horizontalLines: BoundaryLine[],
   verticalLines: BoundaryLine[],
   exportDimension = 2880,
+  pieceActivationGrid?: number[][],
 ): void {
   const offscreenGraphics = p5Instance.createGraphics(
     exportDimension,
@@ -50,6 +51,7 @@ export function exportHighResolutionImageWithMetadata(
     verticalLines,
     grainBuffer,
     true,
+    pieceActivationGrid,
   );
 
   const formattedTimestamp = getFormattedDate();
@@ -79,6 +81,7 @@ export function exportSvgGraphics(
   horizontalLines: BoundaryLine[],
   verticalLines: BoundaryLine[],
   exportDimension = 1920,
+  pieceActivationGrid?: number[][],
 ): void {
   const timestampString = getFormattedDate();
   const filenameBase = `ShiftingJigsawMatrix_${timestampString}_vector`;
@@ -107,6 +110,7 @@ export function exportSvgGraphics(
     verticalLines,
     null,
     true,
+    pieceActivationGrid,
   );
 
   p5Instance.save(svgGraphics, `${filenameBase}.svg`);
