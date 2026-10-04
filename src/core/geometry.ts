@@ -317,6 +317,26 @@ export function traceJigsawTabClosedPath(
   context2D: CanvasRenderingContext2D,
   geometry: TabGeometry,
 ): void {
+  // 法線ベクトル（タブ突出方向）の逆向きに根元ピース内部へオーバーラップさせて閉じる
+  // これにより、セル矩形とタブ描画境界のアンチエイリアスによる塗り残し隙間を完全に防止
+  const segDx = geometry.basePointRightX - geometry.basePointLeftX;
+  const segDy = geometry.basePointRightY - geometry.basePointLeftY;
+  const segLen = Math.hypot(segDx, segDy);
+
+  let inwardX = 0;
+  let inwardY = 0;
+  if (segLen > 1e-4) {
+    const tabOrientation = geometry.tabHeight >= 0 ? 1 : -1;
+    const normX = (-segDy / segLen) * tabOrientation;
+    const normY = (segDx / segLen) * tabOrientation;
+    const overlapDistance = Math.max(
+      2.5,
+      Math.abs(geometry.tabHeight) * 0.12,
+    );
+    inwardX = -normX * overlapDistance;
+    inwardY = -normY * overlapDistance;
+  }
+
   context2D.beginPath();
   context2D.moveTo(geometry.basePointLeftX, geometry.basePointLeftY);
   context2D.bezierCurveTo(
@@ -343,7 +363,15 @@ export function traceJigsawTabClosedPath(
     geometry.basePointRightX,
     geometry.basePointRightY,
   );
-  context2D.lineTo(geometry.basePointLeftX, geometry.basePointLeftY);
+  // 根元ピース内部へオーバーラップして閉じる
+  context2D.lineTo(
+    geometry.basePointRightX + inwardX,
+    geometry.basePointRightY + inwardY,
+  );
+  context2D.lineTo(
+    geometry.basePointLeftX + inwardX,
+    geometry.basePointLeftY + inwardY,
+  );
   context2D.closePath();
 }
 
