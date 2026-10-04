@@ -165,11 +165,40 @@ export const ReactiveFadeSection: React.FC<Props> = ({
 
           {/* Fade Timing Sliders */}
           <div className="space-y-2 bg-white/60 p-2.5 rounded-md border border-gray-200/70">
-            {/* Fade In Duration Slider */}
+            {/* Fade In Delay Slider */}
             <div className="space-y-1">
               <div className="flex justify-between items-center text-[10px]">
                 <span className="text-gray-700 font-medium">
-                  色づき時間 (Fade In)
+                  色づき遅延 (Fade In Delay)
+                </span>
+                <span className="font-mono font-semibold text-gray-900">
+                  {params.fadeInDelayMs ?? 0} ms
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={1000}
+                step={50}
+                value={params.fadeInDelayMs ?? 0}
+                onChange={(e) =>
+                  onParamChange(
+                    "fadeInDelayMs",
+                    Number.parseFloat(e.target.value),
+                  )
+                }
+                className="w-full accent-emerald-600 cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
+              />
+              <span className="text-[9px] text-gray-500 block">
+                辺が動いてから色が付き始めるまでの待機時間 (0msで即時)
+              </span>
+            </div>
+
+            {/* Fade In Duration Slider */}
+            <div className="space-y-1 pt-1 border-t border-gray-200/60">
+              <div className="flex justify-between items-center text-[10px]">
+                <span className="text-gray-700 font-medium">
+                  色づき時間 (Fade In Duration)
                 </span>
                 <span className="font-mono font-semibold text-gray-900">
                   {params.fadeInDurationMs} ms
@@ -190,7 +219,7 @@ export const ReactiveFadeSection: React.FC<Props> = ({
                 className="w-full accent-emerald-600 cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
               />
               <span className="text-[9px] text-gray-500 block">
-                移動開始時のイージング時間（急激な色の飛びを防止）
+                色が付き始めてから最大（発光完了）までにかかる時間
               </span>
             </div>
 

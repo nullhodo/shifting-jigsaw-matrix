@@ -177,6 +177,98 @@ describe("reactiveColoring module", () => {
       expect(resultOneEdge.updatedPieceStates[0][0].wasActive).toBe(true);
     });
 
+    it("delays activation start by fadeInDelayMs before easing in", () => {
+      // 1 piece with moving boundary starting at t = 1000
+      const hLines = [createDummyLine(true, 1000)];
+      const vLines = [createDummyLine(true, 1000)];
+      let states = initializePieceActivationStates(2, 2);
+
+      // fadeInDelayMs = 200, fadeInDurationMs = 400
+      // 1) At t = 1000: motion starts, activation is 0
+      const res1000 = updatePieceActivations(
+        2,
+        2,
+        hLines,
+        vLines,
+        1000,
+        400,
+        1000,
+        states,
+        600,
+        2,
+        200,
+      );
+      states = res1000.updatedPieceStates;
+      expect(res1000.activationGrid[0][0]).toBe(0.0);
+
+      // 2) At t = 1100 (100ms elapsed < 200ms delay): still delayed at 0.0
+      const res1100 = updatePieceActivations(
+        2,
+        2,
+        hLines,
+        vLines,
+        1100,
+        400,
+        1000,
+        states,
+        600,
+        2,
+        200,
+      );
+      states = res1100.updatedPieceStates;
+      expect(res1100.activationGrid[0][0]).toBe(0.0);
+
+      // 3) At t = 1200 (200ms elapsed == delay): delay ends, easing begins at 0.0
+      const res1200 = updatePieceActivations(
+        2,
+        2,
+        hLines,
+        vLines,
+        1200,
+        400,
+        1000,
+        states,
+        600,
+        2,
+        200,
+      );
+      states = res1200.updatedPieceStates;
+      expect(res1200.activationGrid[0][0]).toBe(0.0);
+
+      // 4) At t = 1400 (400ms elapsed: 200ms delay + 200ms / 400ms duration): halfway to peak
+      const res1400 = updatePieceActivations(
+        2,
+        2,
+        hLines,
+        vLines,
+        1400,
+        400,
+        1000,
+        states,
+        600,
+        2,
+        200,
+      );
+      states = res1400.updatedPieceStates;
+      expect(res1400.activationGrid[0][0]).toBeCloseTo(0.5, 2);
+
+      // 5) At t = 1600 (600ms elapsed: 200ms delay + 400ms duration): peak reached (1.0)
+      const res1600 = updatePieceActivations(
+        2,
+        2,
+        hLines,
+        vLines,
+        1600,
+        400,
+        1000,
+        states,
+        600,
+        2,
+        200,
+      );
+      expect(res1600.activationGrid[0][0]).toBe(1.0);
+    });
+
     it("smoothly eases in activation when 2 edges start moving", () => {
       // 3 rows x 3 cols:
       // Piece at (0, 0) is surrounded by hLines[0] and vLines[0]

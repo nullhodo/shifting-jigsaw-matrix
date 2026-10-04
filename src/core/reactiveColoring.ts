@@ -102,6 +102,7 @@ export function updatePieceActivations(
   pieceStates: PieceActivationState[][],
   easingDurationMs = 600,
   triggerEdges: 1 | 2 = 2,
+  fadeInDelayMs = 0,
 ): {
   activationGrid: number[][];
   updatedPieceStates: PieceActivationState[][];
@@ -171,43 +172,74 @@ export function updatePieceActivations(
 
       if (isPieceTriggered) {
         if (!wasActive) {
-          // 移動開始: 現在の活性度を開始点としてフェードインイージングを開始
+          // 移動開始: 現在の活性度を開始点としてフェードイン待機/イージングを開始
           triggerStartTimestamp = currentTimestamp;
           startActivation = prevState.currentActivation;
           wasActive = true;
         }
 
-        // イージング付きフェードイン (startActivation -> 1.0)
         const elapsed = Math.max(
           0,
           currentTimestamp - triggerStartTimestamp,
         );
-        const progress = Math.min(
-          1,
-          elapsed / Math.max(1, fadeInDurationMs),
-        );
-        const eased = calculateCubicEaseInOut(progress);
-        currentActivation =
-          startActivation + (1.0 - startActivation) * eased;
-      } else {
-        if (wasActive) {
-          // 移動完了: 到達した活性度を開始点としてフェードアウトイージングを開始
-          triggerStartTimestamp = currentTimestamp;
-          startActivation = prevState.currentActivation;
-          wasActive = false;
+        if (elapsed < fadeInDelayMs) {
+          // 遅延期間中: 開始時の活性度を維持（まだ色づき始めない）
+          currentActivation = startActivation;
+        } else {
+          // 色づきイージング (startActivation -> 1.0)
+          const activeElapsed = elapsed - fadeInDelayMs;
+          const progress = Math.min(
+            1,
+            activeElapsed / Math.max(1, fadeInDurationMs),
+          );
+          const eased = calculateCubicEaseInOut(progress);
+          currentActivation =
+            startActivation + (1.0 - startActivation) * eased;
         }
-
-        // イージング付きフェードアウト (startActivation -> 0.0)
-        const elapsed = Math.max(
+      } else {
+        const elapsedSinceTrigger = Math.max(
           0,
           currentTimestamp - triggerStartTimestamp,
         );
-        const progress = Math.min(
-          1,
-          elapsed / Math.max(1, fadeOutDurationMs),
-        );
-        const eased = calculateCubicEaseInOut(progress);
-        currentActivation = Math.max(0, startActivation * (1.0 - eased));
+        const minActiveDuration = fadeInDelayMs + fadeInDurationMs;
+        const hasCompletedFadeIn =
+          prevState.currentActivation >= 1.0 ||
+          elapsedSinceTrigger >= minActiveDuration;
+
+        // 辺の移動が終了しても、フェードイン未完了（遅延+色づき時間の途中）なら1.0到達まで色づきを継続
+        if (wasActive && !hasCompletedFadeIn) {
+          if (elapsedSinceTrigger < fadeInDelayMs) {
+            currentActivation = startActivation;
+          } else {
+            const activeElapsed = elapsedSinceTrigger - fadeInDelayMs;
+            const progress = Math.min(
+              1,
+              activeElapsed / Math.max(1, fadeInDurationMs),
+            );
+            const eased = calculateCubicEaseInOut(progress);
+            currentActivation =
+              startActivation + (1.0 - startActivation) * eased;
+          }
+        } else {
+          if (wasActive) {
+            // 移動完了かつフェードイン完了後: 現在の活性度を開始点としてフェードアウトを開始
+            triggerStartTimestamp = currentTimestamp;
+            startActivation = currentActivation;
+            wasActive = false;
+          }
+
+          // イージング付きフェードアウト (startActivation -> 0.0)
+          const elapsed = Math.max(
+            0,
+            currentTimestamp - triggerStartTimestamp,
+          );
+          const progress = Math.min(
+            1,
+            elapsed / Math.max(1, fadeOutDurationMs),
+          );
+          const eased = calculateCubicEaseInOut(progress);
+          currentActivation = Math.max(0, startActivation * (1.0 - eased));
+        }
       }
 
       currentActivation = Math.max(0, Math.min(1, currentActivation));

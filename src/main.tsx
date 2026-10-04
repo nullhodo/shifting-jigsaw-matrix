@@ -461,6 +461,7 @@ const App: React.FC = () => {
             pieceActivationStatesRef.current,
             currentParams.easingDurationMilliseconds,
             currentParams.reactiveTriggerEdges ?? 2,
+            currentParams.fadeInDelayMs ?? 0,
           );
           pieceActivationGridRef.current = actResult.activationGrid;
           pieceActivationStatesRef.current = actResult.updatedPieceStates;

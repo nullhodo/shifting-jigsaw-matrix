@@ -19,6 +19,7 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
   singlePieceColorHex: "#e2ad3e",
   reactiveFadeMode: false,
   reactiveTriggerEdges: 2,
+  fadeInDelayMs: 0,
   fadeInDurationMs: 450,
   fadeDurationMs: 1800,
   reactiveBaseColorHex: "#1e293b",
