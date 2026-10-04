@@ -58,7 +58,8 @@ export interface PieceActivationState {
   triggerStartTimestamp: number;
   startActivation: number;
   currentActivation: number;
-  wasTwoEdgesActive: boolean;
+  wasActive?: boolean;
+  wasTwoEdgesActive?: boolean;
 }
 
 /**
@@ -76,6 +77,7 @@ export function initializePieceActivationStates(
         triggerStartTimestamp: -999999,
         startActivation: 0,
         currentActivation: 0,
+        wasActive: false,
         wasTwoEdgesActive: false,
       });
     }
@@ -86,7 +88,7 @@ export function initializePieceActivationStates(
 
 /**
  * ピース (r, c) の持つ周囲境界線のうち、直近で動いた境界線の数を判定し、
- * 2辺以上が動いたピースをイージングで滑らかに発光(fade-in)させ、
+ * 指定された辺数（1辺または2辺）が動いたピースをイージングで滑らかに発光(fade-in)させ、
  * 移動完了後にイージングで滑らかにフェードアウト(fade-out)させる更新関数
  */
 export function updatePieceActivations(
@@ -99,6 +101,7 @@ export function updatePieceActivations(
   fadeOutDurationMs: number,
   pieceStates: PieceActivationState[][],
   easingDurationMs = 600,
+  triggerEdges: 1 | 2 = 2,
 ): {
   activationGrid: number[][];
   updatedPieceStates: PieceActivationState[][];
@@ -145,31 +148,33 @@ export function updatePieceActivations(
       const verticalActiveCount =
         (leftActive ? 1 : 0) + (rightActive ? 1 : 0);
 
-      // 持つ2辺が動いたかの判定:
-      // 水平方向で1辺以上 かつ 垂直方向で1辺以上動いている、または自身を囲む辺のうち合計2辺以上が動いた場合
+      // 持つ1辺または2辺が動いたかの判定
       const totalActiveEdges = horizontalActiveCount + verticalActiveCount;
-      const hasTwoEdgesMoved =
-        totalActiveEdges >= 2 ||
-        (horizontalActiveCount >= 1 && verticalActiveCount >= 1);
+      const isPieceTriggered =
+        triggerEdges === 1
+          ? totalActiveEdges >= 1
+          : totalActiveEdges >= 2 ||
+            (horizontalActiveCount >= 1 && verticalActiveCount >= 1);
 
       const prevState = pieceStates?.[r]?.[c] ?? {
         triggerStartTimestamp: -999999,
         startActivation: 0,
         currentActivation: 0,
-        wasTwoEdgesActive: false,
+        wasActive: false,
       };
 
       let triggerStartTimestamp = prevState.triggerStartTimestamp;
       let startActivation = prevState.startActivation;
-      let wasTwoEdgesActive = prevState.wasTwoEdgesActive;
+      let wasActive =
+        prevState.wasActive ?? prevState.wasTwoEdgesActive ?? false;
       let currentActivation = prevState.currentActivation;
 
-      if (hasTwoEdgesMoved) {
-        if (!prevState.wasTwoEdgesActive) {
+      if (isPieceTriggered) {
+        if (!wasActive) {
           // 移動開始: 現在の活性度を開始点としてフェードインイージングを開始
           triggerStartTimestamp = currentTimestamp;
           startActivation = prevState.currentActivation;
-          wasTwoEdgesActive = true;
+          wasActive = true;
         }
 
         // イージング付きフェードイン (startActivation -> 1.0)
@@ -185,11 +190,11 @@ export function updatePieceActivations(
         currentActivation =
           startActivation + (1.0 - startActivation) * eased;
       } else {
-        if (prevState.wasTwoEdgesActive) {
+        if (wasActive) {
           // 移動完了: 到達した活性度を開始点としてフェードアウトイージングを開始
           triggerStartTimestamp = currentTimestamp;
           startActivation = prevState.currentActivation;
-          wasTwoEdgesActive = false;
+          wasActive = false;
         }
 
         // イージング付きフェードアウト (startActivation -> 0.0)
@@ -212,7 +217,8 @@ export function updatePieceActivations(
         triggerStartTimestamp,
         startActivation,
         currentActivation,
-        wasTwoEdgesActive,
+        wasActive,
+        wasTwoEdgesActive: wasActive,
       });
     }
 

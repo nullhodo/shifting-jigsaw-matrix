@@ -28,6 +28,7 @@ export interface JigsawParameters {
   monochromeFillActive: boolean;
   singlePieceColorHex: string;
   reactiveFadeMode: boolean;
+  reactiveTriggerEdges: 1 | 2;
   fadeInDurationMs: number;
   fadeDurationMs: number;
   reactiveBaseColorHex: string;

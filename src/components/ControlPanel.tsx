@@ -27,6 +27,7 @@ import { ExportSection } from "./sections/ExportSection";
 import { GridScaleSection } from "./sections/GridScaleSection";
 import { MotionSection } from "./sections/MotionSection";
 import { OperationsSection } from "./sections/OperationsSection";
+import { ReactiveFadeSection } from "./sections/ReactiveFadeSection";
 
 interface Props {
   onParamChange: (
@@ -253,6 +254,10 @@ export const ControlPanel: React.FC<Props> = ({
                   onPickRandomPalette={onPickRandomPalette}
                   onShufflePaletteColors={onShufflePaletteColors}
                   onGenerateGradientTheme={onGenerateGradientTheme}
+                />
+                <ReactiveFadeSection
+                  params={params}
+                  onParamChange={onParamChange}
                 />
                 <EffectsSection
                   params={params}

@@ -169,8 +169,8 @@ export const RandomTargetsDrawer: React.FC = () => {
         },
         {
           key: "reactiveFadeMode",
-          label: "動的フェード色づきモード",
-          desc: "2辺移動時の発光＆フェードアウトモード切替",
+          label: "動的フェード発光モード",
+          desc: "境界線移動時のピース発光＆フェードアウト切替",
         },
         {
           key: "grainActive",

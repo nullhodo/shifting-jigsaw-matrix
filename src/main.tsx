@@ -81,7 +81,7 @@ const App: React.FC = () => {
     cycleStartTimestamp: -1,
     triggeredBurstsInCycle: 0,
   });
-  const pieceActivationGridRef = useRef<number[][]>([]);
+  const pieceActivationGridRef = useRef<number[][] | undefined>(undefined);
   const pieceActivationStatesRef = useRef<PieceActivationState[][]>([]);
 
   const loopTimerRef = useRef<{
@@ -460,9 +460,12 @@ const App: React.FC = () => {
             currentParams.fadeDurationMs,
             pieceActivationStatesRef.current,
             currentParams.easingDurationMilliseconds,
+            currentParams.reactiveTriggerEdges ?? 2,
           );
           pieceActivationGridRef.current = actResult.activationGrid;
           pieceActivationStatesRef.current = actResult.updatedPieceStates;
+        } else {
+          pieceActivationGridRef.current = undefined;
         }
 
         renderCompleteJigsawPuzzle(

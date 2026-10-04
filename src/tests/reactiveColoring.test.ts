@@ -99,6 +99,84 @@ describe("reactiveColoring module", () => {
       }
     });
 
+    it("activates on 1 edge movement when triggerEdges is 1, but ignores 1 edge movement when triggerEdges is 2", () => {
+      // Piece at (0, 0) has only hLines[0] moving (1 edge moving)
+      const hLines = [
+        createDummyLine(true, 1000),
+        createDummyLine(false, 0),
+      ];
+      const vLines = [
+        createDummyLine(false, 0),
+        createDummyLine(false, 0),
+      ];
+
+      // Test with triggerEdges = 2 (default): should NOT activate
+      let statesTwoEdges = initializePieceActivationStates(3, 3);
+      const startTwoEdges = updatePieceActivations(
+        3,
+        3,
+        hLines,
+        vLines,
+        1000,
+        400,
+        1000,
+        statesTwoEdges,
+        600,
+        2,
+      );
+      statesTwoEdges = startTwoEdges.updatedPieceStates;
+      const resultTwoEdges = updatePieceActivations(
+        3,
+        3,
+        hLines,
+        vLines,
+        1200,
+        400,
+        1000,
+        statesTwoEdges,
+        600,
+        2,
+      );
+      expect(resultTwoEdges.activationGrid[0][0]).toBe(0.0);
+      expect(resultTwoEdges.updatedPieceStates[0][0].wasActive).toBe(
+        false,
+      );
+
+      // Test with triggerEdges = 1: SHOULD activate
+      let statesOneEdge = initializePieceActivationStates(3, 3);
+      const startOneEdge = updatePieceActivations(
+        3,
+        3,
+        hLines,
+        vLines,
+        1000,
+        400,
+        1000,
+        statesOneEdge,
+        600,
+        1,
+      );
+      statesOneEdge = startOneEdge.updatedPieceStates;
+      expect(startOneEdge.activationGrid[0][0]).toBe(0.0);
+      expect(startOneEdge.updatedPieceStates[0][0].wasActive).toBe(true);
+
+      const resultOneEdge = updatePieceActivations(
+        3,
+        3,
+        hLines,
+        vLines,
+        1200,
+        400,
+        1000,
+        statesOneEdge,
+        600,
+        1,
+      );
+      // At t = 1200 (200ms elapsed out of 400ms fade-in), activation should be 0.5
+      expect(resultOneEdge.activationGrid[0][0]).toBeCloseTo(0.5, 2);
+      expect(resultOneEdge.updatedPieceStates[0][0].wasActive).toBe(true);
+    });
+
     it("smoothly eases in activation when 2 edges start moving", () => {
       // 3 rows x 3 cols:
       // Piece at (0, 0) is surrounded by hLines[0] and vLines[0]
@@ -167,6 +245,7 @@ describe("reactiveColoring module", () => {
             triggerStartTimestamp: 1000,
             startActivation: 1.0,
             currentActivation: 1.0,
+            wasActive: true,
             wasTwoEdgesActive: true, // motion was active until now
           },
         ],
