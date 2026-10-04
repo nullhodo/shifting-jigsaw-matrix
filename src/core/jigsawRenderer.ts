@@ -104,17 +104,21 @@ export function initializeBoundaryLines(
 }
 
 /**
- * ざらつき（グレイン）用のノイズタイルバッファを生成する関数
+ * ざらつき（グレイン）用のノイズタイルバッファを生成（または既存バッファを更新）する関数
  */
 export function generateGrainNoiseTexture(
   p5Instance: p5,
   intensity = 0.14,
+  existingBuffer?: p5.Graphics | null,
 ): p5.Graphics {
   const textureTileSize = 512;
-  const grainBuffer = p5Instance.createGraphics(
-    textureTileSize,
-    textureTileSize,
-  );
+  const grainBuffer =
+    existingBuffer &&
+    existingBuffer.width === textureTileSize &&
+    existingBuffer.height === textureTileSize
+      ? existingBuffer
+      : p5Instance.createGraphics(textureTileSize, textureTileSize);
+
   grainBuffer.pixelDensity(1);
   grainBuffer.loadPixels();
 
@@ -136,6 +140,23 @@ export function generateGrainNoiseTexture(
 
   grainBuffer.updatePixels();
   return grainBuffer;
+}
+
+/**
+ * p5.Graphics の安全なリソース解放ヘルパー
+ * (p5.js の一部バージョンで内部 _elements が参照できず indexOf 例外が発生する不具合を防止)
+ */
+export function safelyDisposeGraphics(
+  graphics: p5.Graphics | null | undefined,
+): void {
+  if (!graphics) return;
+  try {
+    if (typeof graphics.remove === "function") {
+      graphics.remove();
+    }
+  } catch {
+    // p5.js internal remove error ignored
+  }
 }
 
 /**

@@ -20,6 +20,7 @@ import {
   initializeBoundaryLines,
   initializeJigsawGrid,
   renderCompleteJigsawPuzzle,
+  safelyDisposeGraphics,
 } from "./core/jigsawRenderer";
 import { updateBoundaryLinesMotion } from "./core/motion";
 import { VideoRecorderManager } from "./core/recorder";
@@ -66,6 +67,7 @@ const App: React.FC = () => {
   const p5InstanceRef = useRef<p5 | null>(null);
   const recorderRef = useRef<VideoRecorderManager | null>(null);
   const grainBufferRef = useRef<p5.Graphics | null>(null);
+  const lastGrainIntensityRef = useRef(-1);
 
   const paramsRef = useRef(params);
   const colorGridRef = useRef(colorGrid);
@@ -349,6 +351,7 @@ const App: React.FC = () => {
           p,
           paramsRef.current.grainIntensity,
         );
+        lastGrainIntensityRef.current = paramsRef.current.grainIntensity;
       };
 
       p.draw = () => {
@@ -410,15 +413,26 @@ const App: React.FC = () => {
         motionTimingRef.current.triggeredBurstsInCycle =
           motionResult.triggeredBurstsInCycle;
 
-        // Update grain noise if intensity changed
-        if (
-          currentParams.grainActive &&
-          (!grainBufferRef.current || grainBufferRef.current.width <= 0)
-        ) {
-          grainBufferRef.current = generateGrainNoiseTexture(
-            p,
-            currentParams.grainIntensity,
-          );
+        // Update grain noise texture if intensity or active state changed
+        if (currentParams.grainActive) {
+          if (
+            !grainBufferRef.current ||
+            grainBufferRef.current.width <= 0 ||
+            Math.abs(
+              currentParams.grainIntensity - lastGrainIntensityRef.current,
+            ) > 0.001
+          ) {
+            grainBufferRef.current = generateGrainNoiseTexture(
+              p,
+              currentParams.grainIntensity,
+              grainBufferRef.current,
+            );
+            lastGrainIntensityRef.current = currentParams.grainIntensity;
+          }
+        } else if (grainBufferRef.current) {
+          safelyDisposeGraphics(grainBufferRef.current);
+          grainBufferRef.current = null;
+          lastGrainIntensityRef.current = -1;
         }
 
         renderCompleteJigsawPuzzle(

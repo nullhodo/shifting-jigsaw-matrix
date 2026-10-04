@@ -4,6 +4,7 @@ import { getFormattedDate } from "../utils/date";
 import {
   generateGrainNoiseTexture,
   renderCompleteJigsawPuzzle,
+  safelyDisposeGraphics,
 } from "./jigsawRenderer";
 
 export interface JigsawConfigFile {
@@ -64,12 +65,8 @@ export function exportHighResolutionImageWithMetadata(
     exportBaseFilename,
   );
 
-  try {
-    offscreenGraphics.remove();
-    grainBuffer?.remove();
-  } catch {
-    // ignore
-  }
+  safelyDisposeGraphics(offscreenGraphics);
+  safelyDisposeGraphics(grainBuffer);
 }
 
 /**
@@ -114,11 +111,7 @@ export function exportSvgGraphics(
 
   p5Instance.save(svgGraphics, `${filenameBase}.svg`);
 
-  try {
-    svgGraphics.remove();
-  } catch {
-    // ignore
-  }
+  safelyDisposeGraphics(svgGraphics);
 }
 
 /**
