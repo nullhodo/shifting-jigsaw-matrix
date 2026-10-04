@@ -41,6 +41,7 @@ export const RandomTargetsDrawer: React.FC = () => {
     setRandomTargets({
       columns: enable,
       rows: enable,
+      keepSquarePieceAspect: enable,
       tabShapeStyle: enable,
       tabSizeFactor: enable,
       tabRoundness: enable,
@@ -53,6 +54,7 @@ export const RandomTargetsDrawer: React.FC = () => {
       palette: enable,
       paletteShuffle: enable,
       monochromeFillActive: enable,
+      reactiveFadeMode: enable,
       grainActive: enable,
     });
   };
@@ -81,6 +83,11 @@ export const RandomTargetsDrawer: React.FC = () => {
           key: "rows",
           label: "行数 (N 行)",
           desc: "垂直方向のピース分割数 (3〜10)",
+        },
+        {
+          key: "keepSquarePieceAspect",
+          label: "1:1ピース比率 (Square Aspect)",
+          desc: "ピースの縦横比1:1維持のON/OFF",
         },
       ],
     },
@@ -159,6 +166,11 @@ export const RandomTargetsDrawer: React.FC = () => {
           key: "monochromeFillActive",
           label: "単色モード切替",
           desc: "単色ピースモードのランダム切替",
+        },
+        {
+          key: "reactiveFadeMode",
+          label: "動的フェード色づきモード",
+          desc: "2辺移動時の発光＆フェードアウトモード切替",
         },
         {
           key: "grainActive",

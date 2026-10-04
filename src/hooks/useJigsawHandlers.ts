@@ -208,7 +208,15 @@ export function useJigsawHandlers() {
   const randomizeSelectedParameters = () => {
     const updated = { ...params };
 
-    if (randomTargets.columns || randomTargets.rows) {
+    if (randomTargets.keepSquarePieceAspect) {
+      updated.keepSquarePieceAspect = Math.random() > 0.5;
+    }
+
+    if (
+      randomTargets.columns ||
+      randomTargets.rows ||
+      randomTargets.keepSquarePieceAspect
+    ) {
       if (updated.keepSquarePieceAspect) {
         const w = window.innerWidth || 800;
         const h = window.innerHeight || 600;
@@ -302,6 +310,11 @@ export function useJigsawHandlers() {
       updated.currentPaletteIndex = randIdx;
       updated.activeColorPalette =
         filtered.length > 0 ? filtered : chosen.colors.map((c) => c.hex);
+      if (randomTargets.paletteShuffle) {
+        updated.activeColorPalette = [...updated.activeColorPalette].sort(
+          () => Math.random() - 0.5,
+        );
+      }
     } else if (randomTargets.paletteShuffle) {
       updated.activeColorPalette = [...updated.activeColorPalette].sort(
         () => Math.random() - 0.5,
@@ -310,6 +323,10 @@ export function useJigsawHandlers() {
 
     if (randomTargets.monochromeFillActive) {
       updated.monochromeFillActive = Math.random() > 0.5;
+    }
+
+    if (randomTargets.reactiveFadeMode) {
+      updated.reactiveFadeMode = Math.random() > 0.5;
     }
 
     if (randomTargets.grainActive) {

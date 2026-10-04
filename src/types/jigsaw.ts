@@ -95,6 +95,7 @@ export interface LayoutBounds {
 export interface RandomTargets {
   columns: boolean;
   rows: boolean;
+  keepSquarePieceAspect: boolean;
   tabShapeStyle: boolean;
   tabSizeFactor: boolean;
   tabRoundness: boolean;
