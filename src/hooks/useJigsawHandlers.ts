@@ -269,6 +269,15 @@ export function useJigsawHandlers() {
       );
     }
 
+    if (randomTargets.burstCount) {
+      updated.burstCount = Math.floor(1 + Math.random() * 3);
+    }
+
+    if (randomTargets.burstDelayMs) {
+      updated.burstDelayMs =
+        Math.floor((100 + Math.random() * 900) / 50) * 50;
+    }
+
     if (randomTargets.easingDurationMilliseconds) {
       updated.easingDurationMilliseconds = Math.floor(
         300 + Math.random() * 600,

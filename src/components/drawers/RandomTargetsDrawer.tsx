@@ -46,6 +46,8 @@ export const RandomTargetsDrawer: React.FC = () => {
       tabRoundness: enable,
       motionProbability: enable,
       stepIntervalMilliseconds: enable,
+      burstCount: enable,
+      burstDelayMs: enable,
       easingDurationMilliseconds: enable,
       strokeWidth: enable,
       palette: enable,
@@ -116,6 +118,16 @@ export const RandomTargetsDrawer: React.FC = () => {
           key: "stepIntervalMilliseconds",
           label: "判定間隔 (Step Interval)",
           desc: "次の移動抽選までのミリ秒 (600〜2400ms)",
+        },
+        {
+          key: "burstCount",
+          label: "活動回数 (Burst Count)",
+          desc: "1周期あたりの連続活動回数 (1〜3回)",
+        },
+        {
+          key: "burstDelayMs",
+          label: "活動遅延 (Burst Delay)",
+          desc: "活動トリガー間の遅延時間 (50〜2000ms)",
         },
         {
           key: "easingDurationMilliseconds",

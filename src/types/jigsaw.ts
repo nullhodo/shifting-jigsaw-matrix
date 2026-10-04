@@ -29,6 +29,8 @@ export interface JigsawParameters {
   singlePieceColorHex: string;
   motionProbability: number;
   stepIntervalMilliseconds: number;
+  burstCount: number;
+  burstDelayMs: number;
   easingDurationMilliseconds: number;
   strokeWidth: number;
   strokeColorHex: string;
@@ -51,6 +53,7 @@ export interface BoundaryLine {
   isTransitioning: boolean;
   transitionStartTimestamp: number;
   tabDirections: number[];
+  pendingSteps?: number;
 }
 
 export interface TabGeometry {
@@ -94,6 +97,8 @@ export interface RandomTargets {
   tabRoundness: boolean;
   motionProbability: boolean;
   stepIntervalMilliseconds: boolean;
+  burstCount: boolean;
+  burstDelayMs: boolean;
   easingDurationMilliseconds: boolean;
   strokeWidth: boolean;
   palette: boolean;

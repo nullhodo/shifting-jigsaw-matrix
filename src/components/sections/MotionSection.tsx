@@ -84,6 +84,60 @@ export const MotionSection: React.FC<Props> = ({
           />
         </div>
 
+        {/* Burst Count */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-[11px] text-gray-600 font-medium">
+            <label htmlFor="input-burst-count">
+              活動回数 (Burst Count)
+            </label>
+            <span className="text-gray-900 font-semibold">
+              {params.burstCount}回 / 周期
+            </span>
+          </div>
+          <input
+            id="input-burst-count"
+            type="range"
+            min="1"
+            max="4"
+            step="1"
+            value={params.burstCount}
+            onChange={(e) =>
+              onParamChange(
+                "burstCount",
+                Number.parseInt(e.target.value, 10),
+              )
+            }
+            className="w-full accent-emerald-600 bg-gray-200 rounded h-1.5 cursor-pointer"
+          />
+        </div>
+
+        {/* Burst Delay */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-[11px] text-gray-600 font-medium">
+            <label htmlFor="input-burst-delay">
+              活動遅延 (Burst Delay)
+            </label>
+            <span className="text-gray-900 font-semibold">
+              {params.burstDelayMs}ms
+            </span>
+          </div>
+          <input
+            id="input-burst-delay"
+            type="range"
+            min="50"
+            max="2000"
+            step="50"
+            value={params.burstDelayMs}
+            onChange={(e) =>
+              onParamChange(
+                "burstDelayMs",
+                Number.parseInt(e.target.value, 10),
+              )
+            }
+            className="w-full accent-emerald-600 bg-gray-200 rounded h-1.5 cursor-pointer"
+          />
+        </div>
+
         {/* Easing Duration */}
         <div className="space-y-1">
           <div className="flex justify-between text-[11px] text-gray-600 font-medium">

@@ -74,7 +74,7 @@ shifting-jigsaw-matrix/
     │   └── sections/
     │       ├── OperationsSection.tsx   - 自動ランダム更新・周期スライダー・Undo/Redo
     │       ├── GridScaleSection.tsx    - グリッド列・行数・1:1比率・タブ形状スタイル設定
-    │       ├── MotionSection.tsx       - 活動確率・判定間隔・イージング時間・線幅設定
+    │       ├── MotionSection.tsx       - 活動確率・判定間隔・活動回数 (バースト)・遅延時間・イージング時間・線幅設定
     │       ├── ColorPaletteSection.tsx - パレットプレビュー・配色シャッフル・単色モード・グラデーション生成
     │       ├── EffectsSection.tsx      - グレインノイズ質感・デバッグオーバーレイ
     │       └── ExportSection.tsx       - 高解像度PNG / SVG / MP4 / Nループ録画 / JSON 保存・読み込み

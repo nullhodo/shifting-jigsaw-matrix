@@ -71,7 +71,10 @@ const App: React.FC = () => {
   const colorGridRef = useRef(colorGrid);
   const horizontalLinesRef = useRef(horizontalLines);
   const verticalLinesRef = useRef(verticalLines);
-  const lastStepCheckTimeRef = useRef(0);
+  const motionTimingRef = useRef({
+    cycleStartTimestamp: -1,
+    triggeredBurstsInCycle: 0,
+  });
 
   const loopTimerRef = useRef<{
     timeouts: ReturnType<typeof setTimeout>[];
@@ -388,7 +391,7 @@ const App: React.FC = () => {
         const cellW = layoutBounds.availableWidth / currentParams.columns;
         const cellH = layoutBounds.availableHeight / currentParams.rows;
 
-        const { newLastCheckTimestamp } = updateBoundaryLinesMotion(
+        const motionResult = updateBoundaryLinesMotion(
           currentH,
           currentV,
           cellW,
@@ -397,9 +400,15 @@ const App: React.FC = () => {
           currentParams.stepIntervalMilliseconds,
           currentParams.easingDurationMilliseconds,
           performance.now(),
-          lastStepCheckTimeRef.current,
+          motionTimingRef.current.cycleStartTimestamp,
+          currentParams.burstCount,
+          currentParams.burstDelayMs,
+          motionTimingRef.current.triggeredBurstsInCycle,
         );
-        lastStepCheckTimeRef.current = newLastCheckTimestamp;
+        motionTimingRef.current.cycleStartTimestamp =
+          motionResult.cycleStartTimestamp;
+        motionTimingRef.current.triggeredBurstsInCycle =
+          motionResult.triggeredBurstsInCycle;
 
         // Update grain noise if intensity changed
         if (

@@ -12,8 +12,14 @@ export function calculateCubicEaseInOut(progress: number): number {
     : 1 - (-2 * clamped + 2) ** 3 / 2;
 }
 
+export interface MotionUpdateResult {
+  newLastCheckTimestamp: number;
+  cycleStartTimestamp: number;
+  triggeredBurstsInCycle: number;
+}
+
 /**
- * 一定時間ごとに確率で各境界線の1区間移動を開始し、イージングで滑らかに移動量を計算する関数
+ * 一定周期ごとに設定された回数（バースト）および遅延で各境界線の移動を開始し、イージングで滑らかに移動量を計算する関数
  */
 export function updateBoundaryLinesMotion(
   horizontalBoundaryLines: BoundaryLine[],
@@ -25,47 +31,77 @@ export function updateBoundaryLinesMotion(
   easingDurationMilliseconds: number,
   currentTimestamp: number,
   lastStepCheckTimestamp: number,
-): { newLastCheckTimestamp: number } {
-  let newLastCheck = lastStepCheckTimestamp;
+  burstCount = 1,
+  burstDelayMilliseconds = 250,
+  triggeredBurstsInCycle = 0,
+): MotionUpdateResult {
+  let cycleStart = lastStepCheckTimestamp;
+  let burstsDone = triggeredBurstsInCycle;
 
-  // 一定時間ごとに各線の移動可否を確率で判定
-  if (
-    currentTimestamp - lastStepCheckTimestamp >=
-    stepIntervalMilliseconds
-  ) {
-    newLastCheck = currentTimestamp;
+  // 初回未初期化時 (負値または未定義相当) または周期超過時に新周期を開始
+  if (cycleStart < 0) {
+    cycleStart = currentTimestamp;
+    burstsDone = 0;
+  } else if (currentTimestamp - cycleStart >= stepIntervalMilliseconds) {
+    cycleStart = currentTimestamp;
+    burstsDone = 0;
+  }
 
-    for (let hIdx = 0; hIdx < horizontalBoundaryLines.length; hIdx++) {
-      const line = horizontalBoundaryLines[hIdx];
-      if (!line.isTransitioning) {
+  const elapsed = Math.max(0, currentTimestamp - cycleStart);
+
+  // 周期内で現時刻までに発火すべきバースト回数を算出
+  const safeBurstCount = Math.max(1, Math.min(5, Math.round(burstCount)));
+  const safeDelay = Math.max(50, burstDelayMilliseconds);
+  const expectedBursts = Math.min(
+    safeBurstCount,
+    Math.floor(elapsed / safeDelay) + 1,
+  );
+
+  // 未発火のバーストを順次実行
+  if (expectedBursts > burstsDone) {
+    const burstTriggersCount = expectedBursts - burstsDone;
+    for (let b = 0; b < burstTriggersCount; b++) {
+      // 水平境界線の移動判定
+      for (let hIdx = 0; hIdx < horizontalBoundaryLines.length; hIdx++) {
+        const line = horizontalBoundaryLines[hIdx];
         if (Math.random() < motionProbability) {
           const moveDir =
             Math.random() < 0.15
               ? -line.defaultDirection
               : line.defaultDirection;
-          line.previousStepUnit = line.currentStepUnit;
-          line.targetStepUnit = line.currentStepUnit + moveDir;
-          line.isTransitioning = true;
-          line.transitionStartTimestamp = currentTimestamp;
+          if (!line.isTransitioning) {
+            line.previousStepUnit = line.currentStepUnit;
+            line.targetStepUnit = line.currentStepUnit + moveDir;
+            line.isTransitioning = true;
+            line.transitionStartTimestamp = currentTimestamp;
+          } else {
+            // 移動中に次のバーストが当たった場合はキューに移動を予約
+            line.pendingSteps = (line.pendingSteps || 0) + moveDir;
+          }
         }
       }
-    }
 
-    for (let vIdx = 0; vIdx < verticalBoundaryLines.length; vIdx++) {
-      const line = verticalBoundaryLines[vIdx];
-      if (!line.isTransitioning) {
+      // 垂直境界線の移動判定
+      for (let vIdx = 0; vIdx < verticalBoundaryLines.length; vIdx++) {
+        const line = verticalBoundaryLines[vIdx];
         if (Math.random() < motionProbability) {
           const moveDir =
             Math.random() < 0.15
               ? -line.defaultDirection
               : line.defaultDirection;
-          line.previousStepUnit = line.currentStepUnit;
-          line.targetStepUnit = line.currentStepUnit + moveDir;
-          line.isTransitioning = true;
-          line.transitionStartTimestamp = currentTimestamp;
+          if (!line.isTransitioning) {
+            line.previousStepUnit = line.currentStepUnit;
+            line.targetStepUnit = line.currentStepUnit + moveDir;
+            line.isTransitioning = true;
+            line.transitionStartTimestamp = currentTimestamp;
+          } else {
+            // 移動中に次のバーストが当たった場合はキューに移動を予約
+            line.pendingSteps = (line.pendingSteps || 0) + moveDir;
+          }
         }
       }
     }
+    burstsDone = expectedBursts;
   }
 
   // 水平境界線のイージング補間計算
@@ -85,7 +121,18 @@ export function updateBoundaryLinesMotion(
 
       if (normalized >= 1.0) {
         line.currentStepUnit = line.targetStepUnit;
-        line.isTransitioning = false;
+        // 予約されたステップがあれば連続して遷移を開始
+        if (line.pendingSteps && line.pendingSteps !== 0) {
+          const nextDir = line.pendingSteps > 0 ? 1 : -1;
+          line.pendingSteps -= nextDir;
+          line.previousStepUnit = line.currentStepUnit;
+          line.targetStepUnit = line.currentStepUnit + nextDir;
+          line.isTransitioning = true;
+          line.transitionStartTimestamp = currentTimestamp;
+        } else {
+          line.isTransitioning = false;
+          line.pendingSteps = 0;
+        }
       }
     }
     line.shiftOffset = line.currentStepUnit * singleCellWidth;
@@ -108,11 +155,26 @@ export function updateBoundaryLinesMotion(
 
       if (normalized >= 1.0) {
         line.currentStepUnit = line.targetStepUnit;
-        line.isTransitioning = false;
+        // 予約されたステップがあれば連続して遷移を開始
+        if (line.pendingSteps && line.pendingSteps !== 0) {
+          const nextDir = line.pendingSteps > 0 ? 1 : -1;
+          line.pendingSteps -= nextDir;
+          line.previousStepUnit = line.currentStepUnit;
+          line.targetStepUnit = line.currentStepUnit + nextDir;
+          line.isTransitioning = true;
+          line.transitionStartTimestamp = currentTimestamp;
+        } else {
+          line.isTransitioning = false;
+          line.pendingSteps = 0;
+        }
       }
     }
     line.shiftOffset = line.currentStepUnit * singleCellHeight;
   }
 
-  return { newLastCheckTimestamp: newLastCheck };
+  return {
+    newLastCheckTimestamp: cycleStart,
+    cycleStartTimestamp: cycleStart,
+    triggeredBurstsInCycle: burstsDone,
+  };
 }
