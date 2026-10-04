@@ -1,4 +1,5 @@
 import type { BoundaryLine } from "../types/jigsaw";
+import { calculateCubicEaseInOut } from "./motion";
 
 /**
  * 2つのHex色を比率 t (0.0〜1.0) で線形補間し、rgb(r,g,b) 文字列を返す関数
@@ -51,8 +52,42 @@ export function initializeActivationGrid(
 }
 
 /**
+ * 各ピースの活性度イージング状態
+ */
+export interface PieceActivationState {
+  triggerStartTimestamp: number;
+  startActivation: number;
+  currentActivation: number;
+  wasTwoEdgesActive: boolean;
+}
+
+/**
+ * 全ピースの初期活性度状態グリッドを生成
+ */
+export function initializePieceActivationStates(
+  rows: number,
+  cols: number,
+): PieceActivationState[][] {
+  const grid: PieceActivationState[][] = [];
+  for (let r = 0; r < rows; r++) {
+    const row: PieceActivationState[] = [];
+    for (let c = 0; c < cols; c++) {
+      row.push({
+        triggerStartTimestamp: -999999,
+        startActivation: 0,
+        currentActivation: 0,
+        wasTwoEdgesActive: false,
+      });
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+/**
  * ピース (r, c) の持つ周囲境界線のうち、直近で動いた境界線の数を判定し、
- * 2辺以上が動いたピースを発光(1.0)させ、経過時間に応じてフェードアウトさせる更新関数
+ * 2辺以上が動いたピースをイージングで滑らかに発光(fade-in)させ、
+ * 移動完了後にイージングで滑らかにフェードアウト(fade-out)させる更新関数
  */
 export function updatePieceActivations(
   rows: number,
@@ -60,15 +95,16 @@ export function updatePieceActivations(
   horizontalBoundaryLines: BoundaryLine[],
   verticalBoundaryLines: BoundaryLine[],
   currentTimestamp: number,
-  fadeDurationMs: number,
-  lastTriggerTimestamps: number[][],
+  fadeInDurationMs: number,
+  fadeOutDurationMs: number,
+  pieceStates: PieceActivationState[][],
   easingDurationMs = 600,
 ): {
   activationGrid: number[][];
-  updatedTriggerTimestamps: number[][];
+  updatedPieceStates: PieceActivationState[][];
 } {
   const activationGrid: number[][] = [];
-  const updatedTriggerTimestamps: number[][] = [];
+  const updatedPieceStates: PieceActivationState[][] = [];
 
   // 直近で移動したとみなす時間窓 (移動中または直近の移動開始から時間窓以内)
   const recentWindowMs = Math.max(easingDurationMs, 400);
@@ -86,7 +122,7 @@ export function updatePieceActivations(
 
   for (let r = 0; r < rows; r++) {
     const actRow: number[] = [];
-    const trigRow: number[] = [];
+    const stateRow: PieceActivationState[] = [];
 
     // 上下の水平境界線
     const lineTop = r > 0 ? horizontalBoundaryLines[r - 1] : undefined;
@@ -116,30 +152,73 @@ export function updatePieceActivations(
         totalActiveEdges >= 2 ||
         (horizontalActiveCount >= 1 && verticalActiveCount >= 1);
 
-      let lastTrigger = lastTriggerTimestamps[r]?.[c] ?? -999999;
+      const prevState = pieceStates?.[r]?.[c] ?? {
+        triggerStartTimestamp: -999999,
+        startActivation: 0,
+        currentActivation: 0,
+        wasTwoEdgesActive: false,
+      };
 
-      // 2辺が動いた場合、発色タイムスタンプを現在時刻にリフレッシュ
+      let triggerStartTimestamp = prevState.triggerStartTimestamp;
+      let startActivation = prevState.startActivation;
+      let wasTwoEdgesActive = prevState.wasTwoEdgesActive;
+      let currentActivation = prevState.currentActivation;
+
       if (hasTwoEdgesMoved) {
-        lastTrigger = currentTimestamp;
-      }
-      trigRow.push(lastTrigger);
+        if (!prevState.wasTwoEdgesActive) {
+          // 移動開始: 現在の活性度を開始点としてフェードインイージングを開始
+          triggerStartTimestamp = currentTimestamp;
+          startActivation = prevState.currentActivation;
+          wasTwoEdgesActive = true;
+        }
 
-      // 時間経過に伴うフェードアウト計算 (1.0 -> 0.0)
-      const elapsedSinceTrigger = currentTimestamp - lastTrigger;
-      let activation = 0;
-      if (
-        elapsedSinceTrigger >= 0 &&
-        elapsedSinceTrigger < fadeDurationMs
-      ) {
-        activation = 1.0 - elapsedSinceTrigger / fadeDurationMs;
+        // イージング付きフェードイン (startActivation -> 1.0)
+        const elapsed = Math.max(
+          0,
+          currentTimestamp - triggerStartTimestamp,
+        );
+        const progress = Math.min(
+          1,
+          elapsed / Math.max(1, fadeInDurationMs),
+        );
+        const eased = calculateCubicEaseInOut(progress);
+        currentActivation =
+          startActivation + (1.0 - startActivation) * eased;
+      } else {
+        if (prevState.wasTwoEdgesActive) {
+          // 移動完了: 到達した活性度を開始点としてフェードアウトイージングを開始
+          triggerStartTimestamp = currentTimestamp;
+          startActivation = prevState.currentActivation;
+          wasTwoEdgesActive = false;
+        }
+
+        // イージング付きフェードアウト (startActivation -> 0.0)
+        const elapsed = Math.max(
+          0,
+          currentTimestamp - triggerStartTimestamp,
+        );
+        const progress = Math.min(
+          1,
+          elapsed / Math.max(1, fadeOutDurationMs),
+        );
+        const eased = calculateCubicEaseInOut(progress);
+        currentActivation = Math.max(0, startActivation * (1.0 - eased));
       }
 
-      actRow.push(Math.max(0, Math.min(1, activation)));
+      currentActivation = Math.max(0, Math.min(1, currentActivation));
+
+      actRow.push(currentActivation);
+      stateRow.push({
+        triggerStartTimestamp,
+        startActivation,
+        currentActivation,
+        wasTwoEdgesActive,
+      });
     }
 
     activationGrid.push(actRow);
-    updatedTriggerTimestamps.push(trigRow);
+    updatedPieceStates.push(stateRow);
   }
 
-  return { activationGrid, updatedTriggerTimestamps };
+  return { activationGrid, updatedPieceStates };
 }

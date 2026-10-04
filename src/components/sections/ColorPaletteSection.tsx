@@ -360,29 +360,56 @@ export const ColorPaletteSection: React.FC<Props> = ({
         </p>
 
         {params.reactiveFadeMode && (
-          <div className="space-y-1 bg-white/60 p-2 rounded border border-gray-200/60">
-            <div className="flex justify-between text-[10px]">
-              <span className="text-gray-600 font-medium">
-                フェードアウト時間 (Fade Duration)
-              </span>
-              <span className="font-mono text-gray-800">
-                {params.fadeDurationMs} ms
-              </span>
+          <div className="space-y-2 bg-white/60 p-2 rounded border border-gray-200/60">
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-gray-600 font-medium">
+                  色づき時間 (Fade In)
+                </span>
+                <span className="font-mono text-gray-800">
+                  {params.fadeInDurationMs} ms
+                </span>
+              </div>
+              <input
+                type="range"
+                min={100}
+                max={1200}
+                step={50}
+                value={params.fadeInDurationMs}
+                onChange={(e) =>
+                  onParamChange(
+                    "fadeInDurationMs",
+                    Number.parseFloat(e.target.value),
+                  )
+                }
+                className="w-full accent-emerald-600 cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
+              />
             </div>
-            <input
-              type="range"
-              min={400}
-              max={4000}
-              step={100}
-              value={params.fadeDurationMs}
-              onChange={(e) =>
-                onParamChange(
-                  "fadeDurationMs",
-                  Number.parseFloat(e.target.value),
-                )
-              }
-              className="w-full accent-emerald-600 cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
-            />
+
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-gray-600 font-medium">
+                  消滅時間 (Fade Out)
+                </span>
+                <span className="font-mono text-gray-800">
+                  {params.fadeDurationMs} ms
+                </span>
+              </div>
+              <input
+                type="range"
+                min={400}
+                max={4000}
+                step={100}
+                value={params.fadeDurationMs}
+                onChange={(e) =>
+                  onParamChange(
+                    "fadeDurationMs",
+                    Number.parseFloat(e.target.value),
+                  )
+                }
+                className="w-full accent-emerald-600 cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
+              />
+            </div>
           </div>
         )}
       </div>

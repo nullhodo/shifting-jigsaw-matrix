@@ -23,7 +23,10 @@ import {
   safelyDisposeGraphics,
 } from "./core/jigsawRenderer";
 import { updateBoundaryLinesMotion } from "./core/motion";
-import { updatePieceActivations } from "./core/reactiveColoring";
+import {
+  type PieceActivationState,
+  updatePieceActivations,
+} from "./core/reactiveColoring";
 import { VideoRecorderManager } from "./core/recorder";
 import { useJigsawHandlers } from "./hooks/useJigsawHandlers";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -79,7 +82,7 @@ const App: React.FC = () => {
     triggeredBurstsInCycle: 0,
   });
   const pieceActivationGridRef = useRef<number[][]>([]);
-  const lastPieceTriggerTimestampsRef = useRef<number[][]>([]);
+  const pieceActivationStatesRef = useRef<PieceActivationState[][]>([]);
 
   const loopTimerRef = useRef<{
     timeouts: ReturnType<typeof setTimeout>[];
@@ -453,13 +456,13 @@ const App: React.FC = () => {
             currentH,
             currentV,
             now,
+            currentParams.fadeInDurationMs,
             currentParams.fadeDurationMs,
-            lastPieceTriggerTimestampsRef.current,
+            pieceActivationStatesRef.current,
             currentParams.easingDurationMilliseconds,
           );
           pieceActivationGridRef.current = actResult.activationGrid;
-          lastPieceTriggerTimestampsRef.current =
-            actResult.updatedTriggerTimestamps;
+          pieceActivationStatesRef.current = actResult.updatedPieceStates;
         }
 
         renderCompleteJigsawPuzzle(
