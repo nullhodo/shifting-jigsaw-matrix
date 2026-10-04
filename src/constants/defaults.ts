@@ -12,7 +12,7 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
   columns: 6,
   rows: 6,
   keepSquarePieceAspect: false,
-  tabShapeStyle: "classic",
+  tabShapeStyle: "circular",
   tabSizeFactor: 0.16,
   tabRoundness: 0.28,
   monochromeFillActive: false,

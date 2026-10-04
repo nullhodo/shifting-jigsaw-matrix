@@ -89,7 +89,7 @@ export const RandomTargetsDrawer: React.FC = () => {
         {
           key: "tabShapeStyle",
           label: "突起スタイル (Tab Style)",
-          desc: "Classic, Bulb, Sharp, Trapezoid, Gentle",
+          desc: "Circular, Classic, Bulb, Sharp, Trapezoid, Gentle",
         },
         {
           key: "tabSizeFactor",

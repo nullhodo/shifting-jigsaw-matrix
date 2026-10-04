@@ -234,6 +234,7 @@ export function useJigsawHandlers() {
 
     if (randomTargets.tabShapeStyle) {
       const styles = [
+        "circular",
         "classic",
         "bulb",
         "sharp",

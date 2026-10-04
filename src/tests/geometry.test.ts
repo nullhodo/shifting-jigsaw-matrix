@@ -36,8 +36,51 @@ describe("geometry calculations", () => {
     );
   });
 
+  it("computes tab geometry for circular style with deep bite, waist neck and differentiable horizontal tangents", () => {
+    const geo = getJigsawTabGeometry(
+      0,
+      0,
+      100,
+      0,
+      1,
+      "circular",
+      0.16,
+      0.28,
+      0.5,
+    );
+    expect(geo).not.toBeNull();
+    if (!geo) return;
+
+    // Deep bite tab height (around 22px for 100px segment with 0.16 depth)
+    expect(geo.tabHeight).toBeCloseTo(22.0, 1);
+    expect(geo.tabCenterX).toBeCloseTo(50, 1);
+    expect(geo.tabCenterY).toBeCloseTo(22.0, 1);
+
+    // Differentiable with baseline (cp1Y == basePointLeftY, cp6Y == basePointRightY)
+    expect(geo.cp1Y).toBeCloseTo(geo.basePointLeftY, 5);
+    expect(geo.cp6Y).toBeCloseTo(geo.basePointRightY, 5);
+
+    // Tangents point strictly inwards into the tab along the baseline
+    expect(geo.cp1X).toBeGreaterThan(geo.basePointLeftX);
+    expect(geo.cp6X).toBeLessThan(geo.basePointRightX);
+
+    // Waist neck is narrower than head width (forming a distinct bridge)
+    const waistHalfWidth = Math.abs(geo.cp2X - 50);
+    const headHalfWidth = Math.abs(geo.pHeadLeftX - 50);
+    expect(waistHalfWidth).toBeLessThan(headHalfWidth);
+
+    // Points should be symmetric across center X = 50
+    expect(50 - geo.basePointLeftX).toBeCloseTo(
+      geo.basePointRightX - 50,
+      3,
+    );
+    expect(50 - geo.pHeadLeftX).toBeCloseTo(geo.pHeadRightX - 50, 3);
+    expect(50 - geo.cp2X).toBeCloseTo(geo.cp5X - 50, 3);
+  });
+
   it("handles different tab styles gracefully", () => {
     const styles: TabShapeStyle[] = [
+      "circular",
       "classic",
       "bulb",
       "sharp",

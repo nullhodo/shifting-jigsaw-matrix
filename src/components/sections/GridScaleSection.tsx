@@ -147,6 +147,9 @@ export const GridScaleSection: React.FC<Props> = ({
             }
             className="w-full bg-white/70 hover:bg-white/95 border border-gray-300/80 text-gray-900 rounded p-1.5 text-xs focus:ring-1 focus:ring-gray-900 focus:outline-none cursor-pointer shadow-2xs transition"
           >
+            <option value="circular">
+              Circular (円形ベース・微分可能な滑らか曲線)
+            </option>
             <option value="classic">Classic (定番の丸み・くびれ)</option>
             <option value="bulb">Bulb (深いくびれと風船型)</option>
             <option value="sharp">Sharp Wedge (鋭角・くさび型)</option>

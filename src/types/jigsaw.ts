@@ -1,4 +1,5 @@
 export type TabShapeStyle =
+  | "circular"
   | "classic"
   | "bulb"
   | "sharp"

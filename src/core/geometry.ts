@@ -15,7 +15,7 @@ export function getJigsawTabGeometry(
   endCoordinateX: number,
   endCoordinateY: number,
   tabOrientation: number,
-  tabStyle: TabShapeStyle = "classic",
+  tabStyle: TabShapeStyle = "circular",
   tabSizeFactor = 0.16,
   tabRoundness = 0.28,
   tabCenterFraction = 0.5,
@@ -34,6 +34,126 @@ export function getJigsawTabGeometry(
 
   const baseHeight = segmentLength * tabSizeFactor;
   const roundness = tabRoundness;
+
+  const centerX = startCoordinateX + deltaX * tabCenterFraction;
+  const centerY = startCoordinateY + deltaY * tabCenterFraction;
+
+  // 円形ベース・深い食い込み・離れた円頭部と滑らかに細いくびれの橋で繋がる新デフォルトタブ
+  if (tabStyle === "circular") {
+    const rParam = Math.max(0.1, Math.min(0.6, roundness));
+    // 相手ピースへの深い食い込み量 (全高)
+    const actualTabHeight = baseHeight * (1.34 + rParam * 0.12);
+
+    // 頭部円の半径 R と、中心の高さ vc
+    // vc - R > 0 となることで、円頭部がベースラインから明確に離れて浮遊する
+    const R = actualTabHeight * (0.42 + rParam * 0.04);
+    const vc = actualTabHeight - R;
+
+    // 円から細い橋（ネック）へと回り込む角度 α (水平より下向き 約32度)
+    const alpha = 0.54 + (1 - rParam) * 0.08;
+    const cosA = Math.cos(alpha);
+    const sinA = Math.sin(alpha);
+
+    // 根本ピース（ベースライン）での立ち上がり半幅 (頭部よりコンパクトに絞る)
+    const baseHalfWidth = R * (0.72 + (1 - rParam) * 0.16);
+
+    // 円頭部と橋の合流点 (pHeadLeft, pHeadRight)
+    const uHead = R * cosA;
+    const vHead = vc - R * sinA;
+
+    // ベースライン立ち上がり制御長・くびれ制御長・頭部円弧近似制御長
+    const kBase = baseHalfWidth * 0.48;
+    const kNeck = vHead * 0.72;
+    const kHead = (4 / 3) * ((actualTabHeight - vHead) / cosA);
+
+    // 制御点の (u: 接線方向, v: 法線方向) 分解座標
+    // 1. 左側ベースライン立ち上がり: v=0 によりエッジ直線と接線が一致（C^1 連続・角なし）
+    const basePointLeftX = centerX - unitTangentX * baseHalfWidth;
+    const basePointLeftY = centerY - unitTangentY * baseHalfWidth;
+
+    const cp1X = centerX + unitTangentX * (-baseHalfWidth + kBase);
+    const cp1Y = centerY + unitTangentY * (-baseHalfWidth + kBase);
+
+    // 2. 左側くびれ制御点: 内側へ引き寄せられ、かつ円接線と滑らかに合流
+    const cp2X =
+      centerX +
+      unitTangentX * (-uHead + kNeck * sinA) +
+      normalX * (vHead - kNeck * cosA);
+    const cp2Y =
+      centerY +
+      unitTangentY * (-uHead + kNeck * sinA) +
+      normalY * (vHead - kNeck * cosA);
+
+    const pHeadLeftX = centerX - unitTangentX * uHead + normalX * vHead;
+    const pHeadLeftY = centerY - unitTangentY * uHead + normalY * vHead;
+
+    // 3. 頭部円弧: 頂点 actualTabHeight に正確に達し、真円の丸みを形成
+    const cp3X =
+      centerX +
+      unitTangentX * (-uHead - kHead * sinA * 0.75) +
+      normalX * (vHead + kHead * cosA);
+    const cp3Y =
+      centerY +
+      unitTangentY * (-uHead - kHead * sinA * 0.75) +
+      normalY * (vHead + kHead * cosA);
+
+    const cp4X =
+      centerX +
+      unitTangentX * (uHead + kHead * sinA * 0.75) +
+      normalX * (vHead + kHead * cosA);
+    const cp4Y =
+      centerY +
+      unitTangentY * (uHead + kHead * sinA * 0.75) +
+      normalY * (vHead + kHead * cosA);
+
+    const pHeadRightX = centerX + unitTangentX * uHead + normalX * vHead;
+    const pHeadRightY = centerY + unitTangentY * uHead + normalY * vHead;
+
+    // 4. 右側くびれ制御点およびベースライン復帰点
+    const cp5X =
+      centerX +
+      unitTangentX * (uHead - kNeck * sinA) +
+      normalX * (vHead - kNeck * cosA);
+    const cp5Y =
+      centerY +
+      unitTangentY * (uHead - kNeck * sinA) +
+      normalY * (vHead - kNeck * cosA);
+
+    const cp6X = centerX + unitTangentX * (baseHalfWidth - kBase);
+    const cp6Y = centerY + unitTangentY * (baseHalfWidth - kBase);
+
+    const basePointRightX = centerX + unitTangentX * baseHalfWidth;
+    const basePointRightY = centerY + unitTangentY * baseHalfWidth;
+
+    const tabApexX = centerX + normalX * actualTabHeight;
+    const tabApexY = centerY + normalY * actualTabHeight;
+
+    return {
+      basePointLeftX,
+      basePointLeftY,
+      cp1X,
+      cp1Y,
+      cp2X,
+      cp2Y,
+      pHeadLeftX,
+      pHeadLeftY,
+      cp3X,
+      cp3Y,
+      cp4X,
+      cp4Y,
+      pHeadRightX,
+      pHeadRightY,
+      cp5X,
+      cp5Y,
+      cp6X,
+      cp6Y,
+      basePointRightX,
+      basePointRightY,
+      tabHeight: actualTabHeight * tabOrientation,
+      tabCenterX: tabApexX,
+      tabCenterY: tabApexY,
+    };
+  }
 
   let neckHalfWidth: number;
   let headHalfWidth: number;
@@ -67,9 +187,6 @@ export function getJigsawTabGeometry(
     headHalfWidth = segmentLength * (0.16 + roundness * 0.12);
     neckBulgeFactor = roundness * 0.5;
   }
-
-  const centerX = startCoordinateX + deltaX * tabCenterFraction;
-  const centerY = startCoordinateY + deltaY * tabCenterFraction;
 
   const basePointLeftX = centerX - unitTangentX * neckHalfWidth;
   const basePointLeftY = centerY - unitTangentY * neckHalfWidth;
