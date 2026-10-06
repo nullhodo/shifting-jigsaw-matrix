@@ -76,8 +76,18 @@ describe("motion and easing calculations", () => {
     expect(dummyLine.isTransitioning).toBe(false);
   });
 
-  it("triggers multiple bursts with delay within a single interval cycle", () => {
-    const dummyLine: BoundaryLine = {
+  it("triggers multiple bursts with synchronized delays across boundary lines without timing drift", () => {
+    const dummyLineA: BoundaryLine = {
+      defaultDirection: 1,
+      currentStepUnit: 0,
+      previousStepUnit: 0,
+      targetStepUnit: 0,
+      shiftOffset: 0,
+      isTransitioning: false,
+      transitionStartTimestamp: 0,
+      tabDirections: [1],
+    };
+    const dummyLineB: BoundaryLine = {
       defaultDirection: 1,
       currentStepUnit: 0,
       previousStepUnit: 0,
@@ -88,18 +98,18 @@ describe("motion and easing calculations", () => {
       tabDirections: [1],
     };
 
-    const hLines = [dummyLine];
+    const hLines = [dummyLineA, dummyLineB];
     const vLines: BoundaryLine[] = [];
 
-    // t=0: Burst #1 triggers
+    // t=0: Burst #1 triggers simultaneously for lines
     let res = updateBoundaryLinesMotion(
       hLines,
       vLines,
       100,
       100,
       1.0, // 100% trigger probability
-      1200, // cycle interval
-      400,
+      1500, // cycle interval
+      400, // easing duration
       0,
       -1,
       2, // 2 bursts per cycle
@@ -107,60 +117,215 @@ describe("motion and easing calculations", () => {
       0,
     );
     expect(res.triggeredBurstsInCycle).toBe(1);
-    expect(dummyLine.isTransitioning).toBe(true);
-    expect(Math.abs(dummyLine.targetStepUnit)).toBe(1);
+    expect(dummyLineA.isTransitioning).toBe(true);
+    expect(dummyLineB.isTransitioning).toBe(true);
+    expect(dummyLineA.transitionStartTimestamp).toBe(
+      dummyLineB.transitionStartTimestamp,
+    );
+    expect(Math.abs(dummyLineA.targetStepUnit)).toBe(1);
 
-    // t=100: Before burst delay, no new trigger
+    // t=400: First transition completes cleanly, lines rest during burst delay
     res = updateBoundaryLinesMotion(
       hLines,
       vLines,
       100,
       100,
       1.0,
-      1200,
+      1500,
       400,
+      400,
+      res.cycleStartTimestamp,
+      2,
+      250,
+      res.triggeredBurstsInCycle,
+    );
+    expect(dummyLineA.isTransitioning).toBe(false);
+    expect(dummyLineB.isTransitioning).toBe(false);
+    expect(dummyLineA.currentStepUnit).toBe(1);
+    expect(res.triggeredBurstsInCycle).toBe(1);
+
+    // t=500: During burst delay interval, no premature second burst
+    res = updateBoundaryLinesMotion(
+      hLines,
+      vLines,
       100,
+      100,
+      1.0,
+      1500,
+      400,
+      500,
       res.cycleStartTimestamp,
       2,
       250,
       res.triggeredBurstsInCycle,
     );
     expect(res.triggeredBurstsInCycle).toBe(1);
+    expect(dummyLineA.isTransitioning).toBe(false);
 
-    // t=250: Burst #2 triggers, queuing a second step
+    // t=650: Burst #2 triggers after easingDuration (400) + burstDelay (250)
+    // Both lines start transitioning at the exact same scheduled timestamp
     res = updateBoundaryLinesMotion(
       hLines,
       vLines,
       100,
       100,
       1.0,
-      1200,
+      1500,
       400,
-      250,
+      650,
       res.cycleStartTimestamp,
       2,
       250,
       res.triggeredBurstsInCycle,
     );
     expect(res.triggeredBurstsInCycle).toBe(2);
-    expect(Math.abs(dummyLine.pendingSteps || 0)).toBe(1);
+    expect(dummyLineA.isTransitioning).toBe(true);
+    expect(dummyLineB.isTransitioning).toBe(true);
+    expect(dummyLineA.transitionStartTimestamp).toBe(650);
+    expect(dummyLineB.transitionStartTimestamp).toBe(650);
+    expect(dummyLineA.targetStepUnit).toBe(2);
+    expect(dummyLineB.targetStepUnit).toBe(2);
+  });
 
-    // t=400: First transition completes, automatically starts queued second step towards next unit
+  it("ensures inactive line and active line synchronize start timestamps on subsequent burst", () => {
+    // Line A was in transition, Line B was idle
+    const lineA: BoundaryLine = {
+      defaultDirection: 1,
+      currentStepUnit: 0.8,
+      previousStepUnit: 0,
+      targetStepUnit: 1,
+      shiftOffset: 80,
+      isTransitioning: true,
+      transitionStartTimestamp: 0,
+      tabDirections: [1],
+    };
+    const lineB: BoundaryLine = {
+      defaultDirection: 1,
+      currentStepUnit: 0,
+      previousStepUnit: 0,
+      targetStepUnit: 0,
+      shiftOffset: 0,
+      isTransitioning: false,
+      transitionStartTimestamp: 0,
+      tabDirections: [1],
+    };
+
+    const hLines = [lineA, lineB];
+    const vLines: BoundaryLine[] = [];
+
+    // Trigger next burst at t=500 (burstStepDuration=500)
+    const res = updateBoundaryLinesMotion(
+      hLines,
+      vLines,
+      100,
+      100,
+      1.0,
+      1500,
+      300,
+      500,
+      0, // cycleStart = 0
+      2,
+      200,
+      1, // 1 burst already done
+    );
+
+    expect(res.triggeredBurstsInCycle).toBe(2);
+    // Line A has been cleanly finished to target (1) and both start new step together
+    expect(lineA.isTransitioning).toBe(true);
+    expect(lineB.isTransitioning).toBe(true);
+    expect(lineA.transitionStartTimestamp).toBe(500);
+    expect(lineB.transitionStartTimestamp).toBe(500);
+    expect(Math.abs(lineA.targetStepUnit - lineA.previousStepUnit)).toBe(
+      1,
+    );
+    expect(lineB.previousStepUnit).toBe(0);
+    expect(Math.abs(lineB.targetStepUnit)).toBe(1);
+  });
+
+  it("prevents burst storm and keeps line synchronization when parameters are changed dynamically", () => {
+    const lineA: BoundaryLine = {
+      defaultDirection: 1,
+      currentStepUnit: 0,
+      previousStepUnit: 0,
+      targetStepUnit: 0,
+      shiftOffset: 0,
+      isTransitioning: false,
+      transitionStartTimestamp: 0,
+      tabDirections: [1],
+    };
+    const lineB: BoundaryLine = {
+      defaultDirection: 1,
+      currentStepUnit: 0,
+      previousStepUnit: 0,
+      targetStepUnit: 0,
+      shiftOffset: 0,
+      isTransitioning: false,
+      transitionStartTimestamp: 0,
+      tabDirections: [1],
+    };
+
+    const hLines = [lineA, lineB];
+    const vLines: BoundaryLine[] = [];
+
+    // t=0: Burst 1 fires
+    let res = updateBoundaryLinesMotion(
+      hLines,
+      vLines,
+      100,
+      100,
+      1.0,
+      2000,
+      300,
+      0,
+      0,
+      3,
+      300,
+      0,
+    );
+    expect(res.triggeredBurstsInCycle).toBe(1);
+
+    // Dynamic slider tweak: user reduces burstDelay from 300 to 50 at t=400
+    // With old burstStepDuration, step 2 was at 600. With new, step 2 is at 350.
+    // Ensure only 1 burst triggers per update frame instead of bursting multiple times
     res = updateBoundaryLinesMotion(
       hLines,
       vLines,
       100,
       100,
       1.0,
-      1200,
+      2000,
+      300,
       400,
-      401,
-      res.cycleStartTimestamp,
-      2,
-      250,
+      0,
+      3,
+      50, // tweaked delay
       res.triggeredBurstsInCycle,
     );
-    expect(dummyLine.isTransitioning).toBe(true);
-    expect(dummyLine.pendingSteps).toBe(0);
+    expect(res.triggeredBurstsInCycle).toBe(2);
+    // Both lines start transitioning simultaneously at the burst timestamp
+    expect(lineA.isTransitioning).toBe(true);
+    expect(lineB.isTransitioning).toBe(true);
+    expect(lineA.transitionStartTimestamp).toBe(
+      lineB.transitionStartTimestamp,
+    );
+
+    // Another dynamic tweak: user shortens stepInterval to 400 (shorter than total bursts duration)
+    // Verify new cycle does NOT interrupt while bursts are still active
+    const resShort = updateBoundaryLinesMotion(
+      hLines,
+      vLines,
+      100,
+      100,
+      1.0,
+      400, // shortened interval
+      300,
+      450,
+      0,
+      3,
+      50,
+      res.triggeredBurstsInCycle,
+    );
+    // Cycle must not restart prematurely
+    expect(resShort.cycleStartTimestamp).toBe(0);
   });
 });
