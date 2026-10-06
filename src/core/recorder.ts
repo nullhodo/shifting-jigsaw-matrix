@@ -275,12 +275,15 @@ export class VideoRecorderManager {
     console.log(`[MediaRecorder] Saved WebM file: ${filename}`);
   }
 
+  private timerStartTimestamp = 0;
+
   private startTimer() {
     if (this.timerIntervalId) clearInterval(this.timerIntervalId);
+    this.timerStartTimestamp = performance.now();
 
     const updateTimer = () => {
       const elapsedSec = Math.floor(
-        (Date.now() - this.recordingStartTimestamp) / 1000,
+        Math.max(0, performance.now() - this.timerStartTimestamp) / 1000,
       );
       if (this.onStateChangeCallback) {
         this.onStateChangeCallback(this.isRecording, elapsedSec);
@@ -288,7 +291,7 @@ export class VideoRecorderManager {
     };
 
     updateTimer();
-    this.timerIntervalId = setInterval(updateTimer, 1000);
+    this.timerIntervalId = setInterval(updateTimer, 500);
   }
 
   private stopTimer() {
@@ -296,6 +299,7 @@ export class VideoRecorderManager {
       clearInterval(this.timerIntervalId);
       this.timerIntervalId = null;
     }
+    this.timerStartTimestamp = 0;
     if (this.onStateChangeCallback) {
       this.onStateChangeCallback(false, 0);
     }
