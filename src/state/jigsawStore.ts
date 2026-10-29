@@ -41,7 +41,7 @@ export const randomTargetsAtom = atom<RandomTargets>(
 );
 
 export const autoRandomIntervalMsAtom = atom<number>(
-  IS_DEMO_EXE_MODE ? 8000 : 4000,
+  IS_DEMO_EXE_MODE ? 30000 : 4000,
 );
 export const isAutoRandomActiveAtom = atom<boolean>(IS_DEMO_EXE_MODE);
 

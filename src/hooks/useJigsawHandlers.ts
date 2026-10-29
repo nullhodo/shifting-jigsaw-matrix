@@ -301,7 +301,7 @@ export function useJigsawHandlers() {
 
     if (randomTargets.stepIntervalMilliseconds) {
       updated.stepIntervalMilliseconds = Math.floor(
-        600 + Math.random() * 1800,
+        (IS_DEMO_EXE_MODE ? 2000 : 600) + Math.random() * 1800,
       );
     }
 
@@ -316,11 +316,11 @@ export function useJigsawHandlers() {
 
     if (randomTargets.easingDurationMilliseconds) {
       updated.easingDurationMilliseconds = Math.floor(
-        300 + Math.random() * 600,
+        (IS_DEMO_EXE_MODE ? 500 : 300) + Math.random() * 600,
       );
     }
 
-    if (randomTargets.strokeWidth) {
+    if (IS_DEMO_EXE_MODE || randomTargets.strokeWidth) {
       updated.strokeWidth = Number((1.0 + Math.random() * 4.0).toFixed(1));
     }
 

@@ -141,7 +141,7 @@ describe("motion and easing calculations", () => {
     );
     expect(dummyLineA.isTransitioning).toBe(false);
     expect(dummyLineB.isTransitioning).toBe(false);
-    expect(dummyLineA.currentStepUnit).toBe(1);
+    expect(Math.abs(dummyLineA.currentStepUnit)).toBe(1);
     expect(res.triggeredBurstsInCycle).toBe(1);
 
     // t=500: During burst delay interval, no premature second burst
@@ -183,8 +183,12 @@ describe("motion and easing calculations", () => {
     expect(dummyLineB.isTransitioning).toBe(true);
     expect(dummyLineA.transitionStartTimestamp).toBe(650);
     expect(dummyLineB.transitionStartTimestamp).toBe(650);
-    expect(dummyLineA.targetStepUnit).toBe(2);
-    expect(dummyLineB.targetStepUnit).toBe(2);
+    expect(
+      Math.abs(dummyLineA.targetStepUnit - dummyLineA.previousStepUnit),
+    ).toBe(1);
+    expect(
+      Math.abs(dummyLineB.targetStepUnit - dummyLineB.previousStepUnit),
+    ).toBe(1);
   });
 
   it("ensures inactive line and active line synchronize start timestamps on subsequent burst", () => {

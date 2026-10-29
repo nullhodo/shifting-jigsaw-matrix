@@ -97,7 +97,7 @@ shifting-jigsaw-matrix/
 | `pnpm install` | 依存パッケージのインストール |
 | `pnpm dev` | 開発サーバーの起動 (ローカル実行) |
 | `pnpm build` | TypeScript 型チェックおよび本番バンドルビルド |
-| `pnpm build:exe` | デモモード専用の単一 `.exe` 実行ファイルを `release/shifting-jigsaw-matrix.exe` に書き出し (自動ランダムON・周期8000ms・1:1ピース維持・M > 6, N > 4・動的フェードOFF・ツールバー非表示・F11全画面切替対応) |
+| `pnpm build:exe` | デモモード専用の単一 `.exe` 実行ファイルを `release/shifting-jigsaw-matrix.exe` に書き出し (自動ランダムON・周期30000ms・判定間隔2000ms以上・1:1ピース維持・M > 6, N > 4・動的フェードOFF・ツールバー非表示・F11全画面切替対応) |
 | `pnpm test` | Vitest による単体テストの実行 |
 | `pnpm check` | Biome による静的解析とフォーマット確認 |
 | `pnpm format` | Biome によるコードの自動フォーマット |

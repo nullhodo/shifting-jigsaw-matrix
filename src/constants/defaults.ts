@@ -28,10 +28,10 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
   fadeDurationMs: 1800,
   reactiveBaseColorHex: "#1e293b",
   motionProbability: 0.5,
-  stepIntervalMilliseconds: 1200,
+  stepIntervalMilliseconds: IS_DEMO_EXE_MODE ? 2000 : 1200,
   burstCount: 2,
   burstDelayMs: 250,
-  easingDurationMilliseconds: 600,
+  easingDurationMilliseconds: IS_DEMO_EXE_MODE ? 600 : 600,
   strokeWidth: 2.5,
   strokeColorHex: "#0f172a",
   backgroundColorHex: "#090d16",
@@ -43,7 +43,7 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
     .filter((h) => h.toLowerCase() !== "#090d16"),
   debugModeActive: false,
   autoRandomActive: IS_DEMO_EXE_MODE,
-  autoRandomIntervalMs: IS_DEMO_EXE_MODE ? 8000 : 4000,
+  autoRandomIntervalMs: IS_DEMO_EXE_MODE ? 30000 : 4000,
 };
 
 export const DEFAULT_RANDOM_TARGETS: RandomTargets = {
@@ -58,7 +58,7 @@ export const DEFAULT_RANDOM_TARGETS: RandomTargets = {
   burstCount: true,
   burstDelayMs: true,
   easingDurationMilliseconds: true,
-  strokeWidth: false,
+  strokeWidth: IS_DEMO_EXE_MODE,
   palette: true,
   paletteShuffle: true,
   monochromeFillActive: false,
