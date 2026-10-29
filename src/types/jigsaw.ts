@@ -48,6 +48,8 @@ export interface JigsawParameters {
   debugModeActive: boolean;
   autoRandomActive: boolean;
   autoRandomIntervalMs: number;
+  randomTransitionFade: boolean;
+  randomTransitionFadeDurationMs: number;
 }
 
 export interface BoundaryLine {

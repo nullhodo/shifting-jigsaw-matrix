@@ -84,6 +84,11 @@ const App: React.FC = () => {
   });
   const pieceActivationGridRef = useRef<number[][] | undefined>(undefined);
   const pieceActivationStatesRef = useRef<PieceActivationState[][]>([]);
+  const transitionFadeStateRef = useRef<{
+    startTime: number;
+    duration: number;
+    snapshot: HTMLCanvasElement;
+  } | null>(null);
 
   const loopTimerRef = useRef<{
     timeouts: ReturnType<typeof setTimeout>[];
@@ -128,14 +133,41 @@ const App: React.FC = () => {
     showToast,
   } = useJigsawHandlers();
 
+  const triggerRandomize = () => {
+    if (paramsRef.current.randomTransitionFade && p5InstanceRef.current) {
+      const dur = Math.max(
+        100,
+        paramsRef.current.randomTransitionFadeDurationMs || 500,
+      );
+      const canvasElt = (
+        p5InstanceRef.current as unknown as { canvas: HTMLCanvasElement }
+      ).canvas;
+      if (canvasElt && canvasElt.width > 0 && canvasElt.height > 0) {
+        const snapshot = document.createElement("canvas");
+        snapshot.width = canvasElt.width;
+        snapshot.height = canvasElt.height;
+        const ctx = snapshot.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(canvasElt, 0, 0);
+          transitionFadeStateRef.current = {
+            startTime: performance.now(),
+            duration: dur,
+            snapshot,
+          };
+        }
+      }
+    }
+    randomizeSelectedParameters();
+  };
+
   // Auto Random Interval management
   useEffect(() => {
     if (!isAutoRandom) return;
     const interval = setInterval(() => {
-      randomizeSelectedParameters();
+      triggerRandomize();
     }, autoRandomIntervalMs);
     return () => clearInterval(interval);
-  }, [isAutoRandom, autoRandomIntervalMs, randomizeSelectedParameters]);
+  }, [isAutoRandom, autoRandomIntervalMs]);
 
   const handleStartRecord = async () => {
     if (recorderRef.current) {
@@ -185,7 +217,7 @@ const App: React.FC = () => {
     }
 
     // Step 1: Immediately randomize at t=0
-    randomizeSelectedParameters();
+    triggerRandomize();
     showToast(`${N}ループ正確録画を開始しました`);
 
     const startTime = performance.now();
@@ -209,7 +241,7 @@ const App: React.FC = () => {
     // Schedule intermediate randomizations
     for (let k = 1; k < N; k++) {
       const timeout = setTimeout(() => {
-        randomizeSelectedParameters();
+        triggerRandomize();
       }, k * T);
       loopTimerRef.current.timeouts.push(timeout);
     }
@@ -274,7 +306,7 @@ const App: React.FC = () => {
   };
 
   useKeyboardShortcuts({
-    onRandomizeAll: randomizeSelectedParameters,
+    onRandomizeAll: triggerRandomize,
     onUndo: handleUndo,
     onRedo: handleRedo,
     onTogglePanel: () => setIsPanelOpen((prev) => !prev),
@@ -492,6 +524,30 @@ const App: React.FC = () => {
             ? pieceActivationGridRef.current
             : undefined,
         );
+
+        // Cross-fade: Render the previous snapshot with fading out opacity
+        if (transitionFadeStateRef.current) {
+          const fade = transitionFadeStateRef.current;
+          const elapsed = performance.now() - fade.startTime;
+          const progress = Math.min(1.0, elapsed / fade.duration);
+          const oldOpacity = 1.0 - progress; // Linear fade-out: 1.0 -> 0.0
+
+          if (oldOpacity > 0.001) {
+            const ctx = (
+              p as unknown as { drawingContext: CanvasRenderingContext2D }
+            ).drawingContext;
+            if (ctx) {
+              ctx.save();
+              ctx.globalAlpha = oldOpacity;
+              ctx.drawImage(fade.snapshot, 0, 0, p.width, p.height);
+              ctx.restore();
+            }
+          }
+
+          if (progress >= 1.0) {
+            transitionFadeStateRef.current = null;
+          }
+        }
       };
 
       p.windowResized = () => {
@@ -565,7 +621,7 @@ const App: React.FC = () => {
             onPickRandomPalette={handlePickRandomPalette}
             onShufflePaletteColors={handleShufflePaletteColors}
             onGenerateGradientTheme={handleGenerateGradientTheme}
-            onRandomizeAll={randomizeSelectedParameters}
+            onRandomizeAll={triggerRandomize}
             onUndo={handleUndo}
             onRedo={handleRedo}
             onExportPng={handleExportPng}

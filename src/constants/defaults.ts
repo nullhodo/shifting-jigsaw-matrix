@@ -44,6 +44,8 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
   debugModeActive: false,
   autoRandomActive: IS_DEMO_EXE_MODE,
   autoRandomIntervalMs: IS_DEMO_EXE_MODE ? 30000 : 4000,
+  randomTransitionFade: IS_DEMO_EXE_MODE,
+  randomTransitionFadeDurationMs: 500,
 };
 
 export const DEFAULT_RANDOM_TARGETS: RandomTargets = {

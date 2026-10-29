@@ -238,7 +238,12 @@ export const ControlPanel: React.FC<Props> = ({
 
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar text-xs">
-                <OperationsSection onUndo={onUndo} onRedo={onRedo} />
+                <OperationsSection
+                  params={params}
+                  onParamChange={onParamChange}
+                  onUndo={onUndo}
+                  onRedo={onRedo}
+                />
                 <GridScaleSection
                   params={params}
                   onParamChange={onParamChange}

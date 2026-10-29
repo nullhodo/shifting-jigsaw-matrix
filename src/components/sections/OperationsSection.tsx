@@ -7,13 +7,27 @@ import {
   historyStackAtom,
   isAutoRandomActiveAtom,
 } from "../../state/jigsawStore";
+import type {
+  JigsawParamValue,
+  JigsawParameters,
+} from "../../types/jigsaw";
 
 interface Props {
+  params: JigsawParameters;
+  onParamChange: (
+    key: keyof JigsawParameters,
+    val: JigsawParamValue,
+  ) => void;
   onUndo: () => void;
   onRedo: () => void;
 }
 
-export const OperationsSection: React.FC<Props> = ({ onUndo, onRedo }) => {
+export const OperationsSection: React.FC<Props> = ({
+  params,
+  onParamChange,
+  onUndo,
+  onRedo,
+}) => {
   const [historyStack] = useAtom(historyStackAtom);
   const [historyPointer] = useAtom(historyPointerAtom);
   const [intervalMs, setIntervalMs] = useAtom(autoRandomIntervalMsAtom);
@@ -59,14 +73,68 @@ export const OperationsSection: React.FC<Props> = ({ onUndo, onRedo }) => {
             type="range"
             id="slider-interval-ms"
             min="500"
-            max="8000"
-            step="100"
+            max="30000"
+            step="500"
             value={intervalMs}
             className="w-full accent-emerald-600 bg-gray-200/80 rounded h-1.5 cursor-pointer"
             onChange={(e) =>
               setIntervalMs(Number.parseInt(e.target.value, 10))
             }
           />
+        </div>
+
+        {/* Random Transition Fade Option */}
+        <div className="pt-2 border-t border-gray-200/60 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[11px] text-gray-800 font-semibold">
+                ランダム切替時フェード
+              </div>
+              <div className="text-[9.5px] text-gray-500">
+                更新時に画面を暗転・滑らかに遷移
+              </div>
+            </div>
+            <label
+              className="relative inline-flex items-center cursor-pointer select-none"
+              title="ランダム更新時に黒フェードを挟んで滑らかに切り替えます"
+            >
+              <input
+                type="checkbox"
+                checked={params.randomTransitionFade}
+                className="sr-only peer"
+                onChange={(e) =>
+                  onParamChange("randomTransitionFade", e.target.checked)
+                }
+              />
+              <div className="w-9 h-5 bg-gray-200/80 border border-gray-300/80 rounded-full peer peer-checked:bg-emerald-600 peer-checked:border-emerald-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-transform peer-checked:after:translate-x-4 shadow-2xs" />
+            </label>
+          </div>
+
+          {params.randomTransitionFade && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-gray-600 font-medium text-[11px]">
+                <label htmlFor="slider-fade-ms">フェード時間 (ms)</label>
+                <span className="text-gray-900">
+                  {params.randomTransitionFadeDurationMs}ms
+                </span>
+              </div>
+              <input
+                type="range"
+                id="slider-fade-ms"
+                min="100"
+                max="2000"
+                step="50"
+                value={params.randomTransitionFadeDurationMs}
+                className="w-full accent-emerald-600 bg-gray-200/80 rounded h-1.5 cursor-pointer"
+                onChange={(e) =>
+                  onParamChange(
+                    "randomTransitionFadeDurationMs",
+                    Number.parseInt(e.target.value, 10),
+                  )
+                }
+              />
+            </div>
+          )}
         </div>
       </div>
 
