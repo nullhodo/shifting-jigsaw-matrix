@@ -8,10 +8,14 @@ const starburstIdx = PRESET_COLOR_PALETTES.findIndex((p) =>
 const initialPaletteIdx = starburstIdx !== -1 ? starburstIdx : 0;
 const initialPalette = PRESET_COLOR_PALETTES[initialPaletteIdx];
 
+export const IS_DEMO_EXE_MODE: boolean =
+  import.meta.env.VITE_DEMO_EXE === "true" ||
+  import.meta.env.MODE === "exe";
+
 export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
-  columns: 6,
-  rows: 6,
-  keepSquarePieceAspect: false,
+  columns: IS_DEMO_EXE_MODE ? 8 : 6,
+  rows: IS_DEMO_EXE_MODE ? 5 : 6,
+  keepSquarePieceAspect: IS_DEMO_EXE_MODE,
   tabShapeStyle: "circular",
   tabSizeFactor: 0.16,
   tabRoundness: 0.28,
@@ -38,8 +42,8 @@ export const DEFAULT_JIGSAW_PARAMETERS: JigsawParameters = {
     .map((c) => c.hex)
     .filter((h) => h.toLowerCase() !== "#090d16"),
   debugModeActive: false,
-  autoRandomActive: false,
-  autoRandomIntervalMs: 4000,
+  autoRandomActive: IS_DEMO_EXE_MODE,
+  autoRandomIntervalMs: IS_DEMO_EXE_MODE ? 8000 : 4000,
 };
 
 export const DEFAULT_RANDOM_TARGETS: RandomTargets = {

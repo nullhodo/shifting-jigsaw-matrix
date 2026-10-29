@@ -1,5 +1,6 @@
 import { useAtom } from "jotai";
 import type React from "react";
+import { IS_DEMO_EXE_MODE } from "../constants/defaults";
 import { PRESET_COLOR_PALETTES } from "../constants/palettes";
 import type { JigsawConfigFile } from "../core/exporter";
 import { calculateConstrainedPuzzleDimensions } from "../core/geometry";
@@ -30,6 +31,7 @@ export function useJigsawHandlers() {
   const [, setToasts] = useAtom(toastsAtom);
 
   const showToast = (message: string) => {
+    if (IS_DEMO_EXE_MODE) return;
     const id = `${Date.now()}_${Math.random()}`;
     setToasts((prev) => [...prev, { id, message }]);
     setTimeout(() => {
@@ -69,11 +71,21 @@ export function useJigsawHandlers() {
         const h = window.innerHeight || 600;
         const bounds = calculateConstrainedPuzzleDimensions(w, h);
         const aspect = bounds.availableWidth / bounds.availableHeight;
+        const minCols = IS_DEMO_EXE_MODE ? 7 : 2;
+        const minRows = IS_DEMO_EXE_MODE ? 5 : 2;
 
         if (key === "rows") {
-          cols = Math.max(2, Math.min(16, Math.round(rows * aspect)));
+          rows = Math.max(minRows, Math.min(16, rows));
+          cols = Math.max(
+            minCols,
+            Math.min(16, Math.round(rows * aspect)),
+          );
         } else {
-          rows = Math.max(2, Math.min(16, Math.round(cols / aspect)));
+          cols = Math.max(minCols, Math.min(16, cols));
+          rows = Math.max(
+            minRows,
+            Math.min(16, Math.round(cols / aspect)),
+          );
         }
       }
 
@@ -208,31 +220,47 @@ export function useJigsawHandlers() {
   const randomizeSelectedParameters = () => {
     const updated = { ...params };
 
-    if (randomTargets.keepSquarePieceAspect) {
+    if (IS_DEMO_EXE_MODE) {
+      updated.keepSquarePieceAspect = true;
+      updated.reactiveFadeMode = false;
+    } else if (randomTargets.keepSquarePieceAspect) {
       updated.keepSquarePieceAspect = Math.random() > 0.5;
     }
 
     if (
+      IS_DEMO_EXE_MODE ||
       randomTargets.columns ||
       randomTargets.rows ||
       randomTargets.keepSquarePieceAspect
     ) {
+      const minCols = IS_DEMO_EXE_MODE ? 7 : 3;
+      const minRows = IS_DEMO_EXE_MODE ? 5 : 2;
+
       if (updated.keepSquarePieceAspect) {
         const w = window.innerWidth || 800;
         const h = window.innerHeight || 600;
         const bounds = calculateConstrainedPuzzleDimensions(w, h);
         const aspect = bounds.availableWidth / bounds.availableHeight;
-        const newCols = randomTargets.columns
-          ? Math.floor(Math.random() * 8) + 3
-          : updated.columns;
+        const effectiveMinCols = Math.max(
+          minCols,
+          Math.ceil((minRows - 0.49) * aspect),
+        );
+        const maxCols = 16;
+        const newCols =
+          IS_DEMO_EXE_MODE || randomTargets.columns
+            ? Math.floor(
+                Math.random() *
+                  Math.max(1, maxCols - effectiveMinCols + 1),
+              ) + effectiveMinCols
+            : Math.max(effectiveMinCols, updated.columns);
         updated.columns = newCols;
         updated.rows = Math.max(
-          2,
+          minRows,
           Math.min(16, Math.round(newCols / aspect)),
         );
       } else {
         if (randomTargets.columns) {
-          updated.columns = Math.floor(Math.random() * 8) + 3;
+          updated.columns = Math.floor(Math.random() * 8) + minCols;
         }
         if (randomTargets.rows) {
           updated.rows = Math.floor(Math.random() * 8) + 3;
@@ -325,7 +353,9 @@ export function useJigsawHandlers() {
       updated.monochromeFillActive = Math.random() > 0.5;
     }
 
-    if (randomTargets.reactiveFadeMode) {
+    if (IS_DEMO_EXE_MODE) {
+      updated.reactiveFadeMode = false;
+    } else if (randomTargets.reactiveFadeMode) {
       updated.reactiveFadeMode = Math.random() > 0.5;
     }
 

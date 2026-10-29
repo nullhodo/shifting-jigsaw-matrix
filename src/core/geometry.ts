@@ -385,6 +385,8 @@ export function calculateOptimalGridDimensions(
   windowWidth: number,
   windowHeight: number,
   targetCellSize = 115,
+  minColumns = 3,
+  minRows = 3,
 ): { columns: number; rows: number } {
   const bounds = calculateConstrainedPuzzleDimensions(
     windowWidth,
@@ -393,10 +395,15 @@ export function calculateOptimalGridDimensions(
   const aspect = bounds.availableWidth / bounds.availableHeight;
 
   let rows = Math.round(bounds.availableHeight / targetCellSize);
-  rows = Math.max(3, Math.min(12, rows));
+  rows = Math.max(minRows, Math.min(16, rows));
 
   let cols = Math.round(rows * aspect);
-  cols = Math.max(3, Math.min(16, cols));
+  if (cols < minColumns) {
+    cols = minColumns;
+    rows = Math.max(minRows, Math.min(16, Math.round(cols / aspect)));
+  } else {
+    cols = Math.max(minColumns, Math.min(16, cols));
+  }
 
   return { columns: cols, rows };
 }

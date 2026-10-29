@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
 import { ControlPanel } from "./components/ControlPanel";
 import { RecordingOverlay } from "./components/RecordingOverlay";
+import { IS_DEMO_EXE_MODE } from "./constants/defaults";
 import {
   exportHighResolutionImageWithMetadata,
   exportParameterStateJSON,
@@ -298,7 +299,15 @@ const App: React.FC = () => {
     const initialH = container.clientHeight || window.innerHeight;
 
     // 初回ロード時: ウィンドウサイズから自動でピースが1:1に近くなる最適な行列数を算出・適用
-    const optimal = calculateOptimalGridDimensions(initialW, initialH);
+    const minCols = IS_DEMO_EXE_MODE ? 7 : 3;
+    const minRows = IS_DEMO_EXE_MODE ? 5 : 3;
+    const optimal = calculateOptimalGridDimensions(
+      initialW,
+      initialH,
+      115,
+      minCols,
+      minRows,
+    );
     const initialCols = optimal.columns;
     const initialRows = optimal.rows;
 
@@ -502,11 +511,19 @@ const App: React.FC = () => {
           if (paramsRef.current.keepSquarePieceAspect) {
             const layout = calculateConstrainedPuzzleDimensions(nw, nh);
             const aspect = layout.availableWidth / layout.availableHeight;
+            const minCols = IS_DEMO_EXE_MODE ? 7 : 2;
+            const minRows = IS_DEMO_EXE_MODE ? 5 : 2;
             const newRows = Math.max(
-              2,
+              minRows,
               Math.min(16, Math.round(paramsRef.current.columns / aspect)),
             );
-            if (newRows !== paramsRef.current.rows) {
+            const newCols = Math.max(
+              minCols,
+              Math.min(16, Math.round(newRows * aspect)),
+            );
+            if (newCols !== paramsRef.current.columns) {
+              handleParamChange("columns", newCols);
+            } else if (newRows !== paramsRef.current.rows) {
               handleParamChange("rows", newRows);
             }
           }
@@ -538,28 +555,30 @@ const App: React.FC = () => {
         className="absolute inset-0 w-full h-full"
       />
 
-      {/* Recording Overlay */}
-      <RecordingOverlay onStopRecord={handleStopRecord} />
-
-      {/* Control Panel */}
-      <ControlPanel
-        onParamChange={handleParamChange}
-        onApplyPalette={handleApplyPalette}
-        onPickRandomPalette={handlePickRandomPalette}
-        onShufflePaletteColors={handleShufflePaletteColors}
-        onGenerateGradientTheme={handleGenerateGradientTheme}
-        onRandomizeAll={randomizeSelectedParameters}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onExportPng={handleExportPng}
-        onExportSvg={handleExportSvg}
-        onStartRecord={handleStartRecord}
-        onStopRecord={handleStopRecord}
-        onExportJson={handleExportJson}
-        onImportJson={handleImportJson}
-        onStartNLoopRecord={handleStartNLoopRecord}
-        onStopNLoopRecord={handleStopRecord}
-      />
+      {/* Recording Overlay & Control Panel (Hidden in Demo EXE Mode) */}
+      {!IS_DEMO_EXE_MODE && (
+        <>
+          <RecordingOverlay onStopRecord={handleStopRecord} />
+          <ControlPanel
+            onParamChange={handleParamChange}
+            onApplyPalette={handleApplyPalette}
+            onPickRandomPalette={handlePickRandomPalette}
+            onShufflePaletteColors={handleShufflePaletteColors}
+            onGenerateGradientTheme={handleGenerateGradientTheme}
+            onRandomizeAll={randomizeSelectedParameters}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onExportPng={handleExportPng}
+            onExportSvg={handleExportSvg}
+            onStartRecord={handleStartRecord}
+            onStopRecord={handleStopRecord}
+            onExportJson={handleExportJson}
+            onImportJson={handleImportJson}
+            onStartNLoopRecord={handleStartNLoopRecord}
+            onStopNLoopRecord={handleStopRecord}
+          />
+        </>
+      )}
     </div>
   );
 };

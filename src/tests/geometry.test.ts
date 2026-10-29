@@ -201,4 +201,26 @@ describe("geometry calculations", () => {
     expect(fromRows.rows).toBe(4);
     expect(fromRows.columns).toBe(6); // Math.round(4 * 1.55) = 6
   });
+
+  it("calculates optimal grid dimensions with minimum columns and rows constraints (m > 6, n > 4)", () => {
+    const constrained = calculateOptimalGridDimensions(
+      1280,
+      800,
+      115,
+      7,
+      5,
+    );
+    expect(constrained.columns).toBeGreaterThanOrEqual(7);
+    expect(constrained.rows).toBeGreaterThanOrEqual(5);
+
+    const smallScreenConstrained = calculateOptimalGridDimensions(
+      600,
+      400,
+      115,
+      7,
+      5,
+    );
+    expect(smallScreenConstrained.columns).toBeGreaterThanOrEqual(7);
+    expect(smallScreenConstrained.rows).toBeGreaterThanOrEqual(5);
+  });
 });

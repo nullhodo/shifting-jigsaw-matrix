@@ -27,6 +27,7 @@ M×N 行列状のジグソーパズル境界線が動的にシフト・スライ
 - スタイリング: TailwindCSS
 - ビルドツール: Vite
 - パッケージマネージャー: pnpm
+- デスクトップ実行ファイル化: Electron + electron-builder (単一 portable `.exe` 出力)
 - コード品質 / フォーマッター: Biome
 - テストフレームワーク: Vitest
 - 動画録画: WebCodecs + mp4-muxer (60fps H.264 MP4 直接出力、MediaRecorder フォールバック)
@@ -44,7 +45,10 @@ shifting-jigsaw-matrix/
 ├── biome.json
 ├── .gitignore
 ├── README.md
+├── electron/
+│   └── main.mjs                - Electron メインプロセス (F11 フルスクリーン切替・メニューバー非表示)
 ├── output/                     - 出力画像・録画動画・JSON設定ファイルの保管先 (gitignore対象)
+├── release/                    - ビルドされた単一 `.exe` 実行ファイルの出力先 (gitignore対象)
 └── src/
     ├── main.tsx
     ├── index.css
@@ -93,6 +97,7 @@ shifting-jigsaw-matrix/
 | `pnpm install` | 依存パッケージのインストール |
 | `pnpm dev` | 開発サーバーの起動 (ローカル実行) |
 | `pnpm build` | TypeScript 型チェックおよび本番バンドルビルド |
+| `pnpm build:exe` | デモモード専用の単一 `.exe` 実行ファイルを `release/shifting-jigsaw-matrix.exe` に書き出し (自動ランダムON・周期8000ms・1:1ピース維持・M > 6, N > 4・動的フェードOFF・ツールバー非表示・F11全画面切替対応) |
 | `pnpm test` | Vitest による単体テストの実行 |
 | `pnpm check` | Biome による静的解析とフォーマット確認 |
 | `pnpm format` | Biome によるコードの自動フォーマット |
@@ -109,6 +114,7 @@ shifting-jigsaw-matrix/
 | `S` | 動画録画の停止・保存 |
 | `P` | 高解像度 PNG 画像 (2880px) + JSON の保存 |
 | `D` | デバッグ情報オーバーレイの表示切り替え |
+| `F11` | フルスクリーン表示の切り替え (`.exe` デモモードでは `Escape` でも解除可能) |
 
 ## 6. ライブラリ選定と設計方針
 

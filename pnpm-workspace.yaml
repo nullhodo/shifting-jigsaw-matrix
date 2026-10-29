@@ -1,5 +1,9 @@
-packages:
-  - "."
 allowBuilds:
-  "@biomejs/biome": true
+  '@biomejs/biome': true
+  electron-winstaller: true
   esbuild: true
+onlyBuiltDependencies:
+  - '@biomejs/biome'
+  - electron
+  - electron-winstaller
+  - esbuild

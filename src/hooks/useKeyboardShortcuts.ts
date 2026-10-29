@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { IS_DEMO_EXE_MODE } from "../constants/defaults";
 
 interface KeyboardShortcutsOptions {
   onRandomizeAll?: () => void;
@@ -22,6 +23,21 @@ export function useKeyboardShortcuts(
         activeTag === "TEXTAREA" ||
         activeTag === "SELECT"
       ) {
+        return;
+      }
+
+      // F11: Toggle Fullscreen (for browser / Electron fallback)
+      if (e.key === "F11") {
+        e.preventDefault();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+        } else {
+          document.exitFullscreen?.().catch(() => {});
+        }
+        return;
+      }
+
+      if (IS_DEMO_EXE_MODE) {
         return;
       }
 

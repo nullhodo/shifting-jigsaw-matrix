@@ -2,6 +2,7 @@ import { atom } from "jotai";
 import {
   DEFAULT_JIGSAW_PARAMETERS,
   DEFAULT_RANDOM_TARGETS,
+  IS_DEMO_EXE_MODE,
 } from "../constants/defaults";
 import type {
   BoundaryLine,
@@ -23,7 +24,7 @@ export const historyStackAtom = atom<JigsawParameters[]>([
 ]);
 export const historyPointerAtom = atom<number>(0);
 
-export const isPanelOpenAtom = atom<boolean>(true);
+export const isPanelOpenAtom = atom<boolean>(!IS_DEMO_EXE_MODE);
 export const isRandomTargetsModalOpenAtom = atom<boolean>(false);
 
 export const recordingStateAtom = atom<RecordingState>({
@@ -39,8 +40,10 @@ export const randomTargetsAtom = atom<RandomTargets>(
   DEFAULT_RANDOM_TARGETS,
 );
 
-export const autoRandomIntervalMsAtom = atom<number>(4000);
-export const isAutoRandomActiveAtom = atom<boolean>(false);
+export const autoRandomIntervalMsAtom = atom<number>(
+  IS_DEMO_EXE_MODE ? 8000 : 4000,
+);
+export const isAutoRandomActiveAtom = atom<boolean>(IS_DEMO_EXE_MODE);
 
 export const targetLoopsCountAtom = atom<number>(2);
 export const isLoopRecordingActiveAtom = atom<boolean>(false);
